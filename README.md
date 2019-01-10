@@ -1,2 +1,3 @@
-# porter-vscode
-Visual Studio Code tools and integration for Porter
+# Visual Studio Code Porter Tools
+
+Build CNAB bundles with Porter

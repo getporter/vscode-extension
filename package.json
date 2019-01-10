@@ -1,0 +1,36 @@
+{
+    "name": "porter-vscode",
+    "displayName": "Porter",
+    "description": "Build CNAB bundles with Porter",
+    "version": "0.0.1",
+    "publisher": "ms-kubernetes-tools",
+    "engines": {
+        "vscode": "^1.30.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:yaml"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    },
+    "extensionDependencies": [
+        "redhat.vscode-yaml"
+    ],
+    "devDependencies": {
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.6",
+        "tslint": "^5.8.0",
+        "@types/node": "^7.0.43",
+        "@types/mocha": "^2.2.42"
+    }
+}
