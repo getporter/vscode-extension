@@ -2,7 +2,10 @@
 
 import * as vscode from 'vscode';
 
-export function activate(context: vscode.ExtensionContext) {
+import { registerYamlSchema } from './yaml/yaml-schema';
+
+export async function activate(context: vscode.ExtensionContext) {
+    await registerYamlSchema();
 }
 
 export function deactivate() {
