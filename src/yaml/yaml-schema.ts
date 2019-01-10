@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { activateYamlExtension } from "./yaml-extension";
 import { failed } from '../utils/errorable';
 import { porterBaseSchema } from '../schema/porter-base-schema';
+import { mixins, rollInMixinSchema } from '../schema/porter-mixin-schema';
 
 const PORTER_SCHEMA = 'porter';
 
@@ -32,6 +33,10 @@ function onRequestSchemaContent(schemaUri: string): string | undefined {
     }
 
     const schema = porterBaseSchema();
+
+    for (const mixin of mixins()) {
+        rollInMixinSchema(schema, mixin);
+    }
 
     const schemaJSON = JSON.stringify(schema, undefined, 2);
     console.log(schemaJSON);

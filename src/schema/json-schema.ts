@@ -19,7 +19,8 @@ interface JSONArraySchema extends JSONSchemaCommon {
 
 interface JSONObjectSchema extends JSONSchemaCommon {
     readonly type: "object";
-    readonly properties: { [key: string]: JSONSchema };
+    readonly properties?: { [key: string]: JSONSchema };
+    readonly $ref?: string;
     readonly additionalProperties?: boolean;  // technically incorrect but good enough for our use case
     readonly required?: string[];
     readonly oneOf?: any[];  // TODO: un-any-fy
