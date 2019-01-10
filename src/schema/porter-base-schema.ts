@@ -1,4 +1,4 @@
-export function porterBaseSchema(): JSONSchema {
+export function porterBaseSchema(): JSONRootSchema {
     const schema: JSONRootSchema = {
         description: "Porter bundle specification",
         type: "object",
