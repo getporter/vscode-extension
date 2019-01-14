@@ -34,6 +34,12 @@ function porterRootProperties(): { [key: string]: JSONSchema } {
                 $ref: "#/definitions/mixinId"
             }
         },
+        credentials: {
+            type: "array",
+            items: {
+                $ref: "#/definitions/credential"
+            }
+        },
         parameters: {
             type: "array",
             items: {
@@ -54,6 +60,29 @@ function porterRootProperties(): { [key: string]: JSONSchema } {
     return properties;
 }
 
+function porterCredentialSchema(): JSONSchema {
+    return {
+        type: "object",
+        properties: {
+            name: {
+                type: "string"
+            },
+            path: {
+                type: "string"
+            },
+            env: {
+                type: "string"
+            }
+        },
+        required: ["name"],
+        oneOf: [
+            { required: ["path"] },
+            { required: ["env"] }
+        ],
+        additionalProperties: false
+    };
+}
+
 function porterParameterSchema(): JSONSchema {
     return {
         type: "object",
@@ -62,12 +91,13 @@ function porterParameterSchema(): JSONSchema {
                 type: "string"
             },
             type: {
-                type: "string"
+                enum: ["int", "string", "boolean"]
             },
             default: {
                 type: "string"
             },
         },
+        required: ["name", "type"],
         additionalProperties: false
     };
 }
@@ -77,6 +107,7 @@ function porterSchemaDefinitions(): { [key: string]: JSONSchema } {
         mixinId: {
             enum: []
         },
+        credential: porterCredentialSchema(),
         parameter: porterParameterSchema()
     };
 
