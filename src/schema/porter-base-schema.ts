@@ -15,7 +15,7 @@ export function porterBaseSchema(): JSONRootSchema {
     return schema;
 }
 
-const PORTER_ACTION_IDS = ['install'];
+const PORTER_ACTION_IDS = ['install', 'uninstall'];
 
 function porterRootProperties(): { [key: string]: JSONSchema } {
     const properties: { [key: string]: JSONSchema } = {
@@ -102,13 +102,27 @@ function porterParameterSchema(): JSONSchema {
     };
 }
 
+function porterStepOutputSchema(): JSONSchema {
+    return {
+        type: "object",
+        properties: {
+            name: {
+                type: "string"
+            }
+        },
+        required: ["name"],
+        additionalProperties: true
+    };
+}
+
 function porterSchemaDefinitions(): { [key: string]: JSONSchema } {
     const definitions: { [key: string]: JSONSchema } = {
         mixinId: {
             enum: []
         },
         credential: porterCredentialSchema(),
-        parameter: porterParameterSchema()
+        parameter: porterParameterSchema(),
+        stepOutput: porterStepOutputSchema()
     };
 
     for (const action of PORTER_ACTION_IDS) {
@@ -124,6 +138,12 @@ function stepBaseSchema(): JSONSchema {
         properties: {
             description: {
                 type: "string"
+            },
+            outputs: {
+                type: "array",
+                items: {
+                    $ref: "#/definitions/stepoutput"
+                }
             }
         },
         additionalProperties: false,

@@ -14,14 +14,14 @@ interface JSONArraySchema extends JSONSchemaCommon {
     readonly type: "array";
     readonly items: {
         readonly $ref: string;
-    };
+    } | JSONSchema;
 }
 
 interface JSONObjectSchema extends JSONSchemaCommon {
     readonly type: "object";
     readonly properties?: { [key: string]: JSONSchema };
     readonly $ref?: string;
-    readonly additionalProperties?: boolean;  // technically incorrect but good enough for our use case
+    readonly additionalProperties?: boolean | JSONSchema;
     readonly required?: string[];
     readonly oneOf?: any[];  // TODO: un-any-fy
 }

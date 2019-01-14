@@ -1,5 +1,5 @@
 export function mixins(): string[] {
-    return ['helm'];
+    return ['helm', 'exec'];
 }
 
 function helmMixinSchema(): { [key: string]: JSONSchema } {
@@ -20,10 +20,50 @@ function helmMixinSchema(): { [key: string]: JSONSchema } {
     };
 }
 
+function execMixinSchema(): { [key: string]: JSONSchema } {
+    function execStepMixinSchema(): JSONSchema {
+        return {
+            type: "object",
+            properties: {
+                name: {
+                    type: "string"
+                },
+                command: {
+                    type: "string"
+                },
+                arguments: {
+                    type: "array",
+                    items: {
+                        type: "string"
+                    }
+                },
+                parameters: {
+                    type: "object",
+                    additionalProperties: {
+                        type: "string"
+                    }
+                }
+            },
+            required: [
+                "name",
+                "command"
+            ],
+            additionalProperties: false
+        };
+    }
+
+    return {
+        install: execStepMixinSchema(),
+        uninstall: execStepMixinSchema()
+    };
+}
+
 function porterMixinSchema(mixin: string): { [key: string]: JSONSchema } | undefined {
     // TODO: replace with dynamic loading
     if (mixin === 'helm') {
         return helmMixinSchema();
+    } else if (mixin === 'exec') {
+        return execMixinSchema();
     }
 
     return undefined;
