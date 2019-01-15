@@ -14,8 +14,7 @@
         "onLanguage:yaml"
     ],
     "main": "./out/extension",
-    "contributes": {
-    },
+    "contributes": {},
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
@@ -26,6 +25,10 @@
     "extensionDependencies": [
         "redhat.vscode-yaml"
     ],
+    "dependencies": {
+        "@types/shelljs": "^0.8.1",
+        "shelljs": "^0.8.3"
+    },
     "devDependencies": {
         "typescript": "^2.6.1",
         "vscode": "^1.1.6",
