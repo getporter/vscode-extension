@@ -45,6 +45,12 @@ function porterRootProperties(): { [key: string]: JSONSchema } {
             items: {
                 $ref: "#/definitions/parameter"
             }
+        },
+        dependencies: {
+            type: "array",
+            items: {
+                $ref: "#/definitions/dependency"
+            }
         }
     };
 
@@ -102,6 +108,41 @@ function porterParameterSchema(): JSONSchema {
     };
 }
 
+function porterDependencySchema(): JSONSchema {
+    return {
+        type: "object",
+        properties: {
+            name: {
+                type: "string"
+            },
+            parameters: {
+                type: "object",
+                additionalProperties: {
+                    type: "string"
+                }
+            },
+            connections: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        source: {
+                            type: "string"
+                        },
+                        destination: {
+                            type: "string"
+                        }
+                    },
+                    required: ["source", "destination"],
+                    additionalProperties: false,
+                }
+            }
+        },
+        required: ["name"],
+        additionalProperties: false
+    };
+}
+
 function porterStepOutputSchema(): JSONSchema {
     return {
         type: "object",
@@ -122,6 +163,7 @@ function porterSchemaDefinitions(): { [key: string]: JSONSchema } {
         },
         credential: porterCredentialSchema(),
         parameter: porterParameterSchema(),
+        dependency: porterDependencySchema(),
         stepOutput: porterStepOutputSchema()
     };
 
@@ -142,7 +184,7 @@ function stepBaseSchema(): JSONSchema {
             outputs: {
                 type: "array",
                 items: {
-                    $ref: "#/definitions/stepoutput"
+                    $ref: "#/definitions/stepOutput"
                 }
             }
         },

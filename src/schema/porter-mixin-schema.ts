@@ -45,7 +45,6 @@ function execMixinSchema(): { [key: string]: JSONSchema } {
                 }
             },
             required: [
-                "name",
                 "command"
             ],
             additionalProperties: false
