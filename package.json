@@ -11,10 +11,18 @@
         "Other"
     ],
     "activationEvents": [
+        "onCommand:porter.createProject",
         "onLanguage:yaml"
     ],
     "main": "./out/extension",
     "contributes": {
+        "commands": [
+            {
+                "command": "porter.createProject",
+                "title": "Create Project",
+                "category": "Porter"
+            }
+        ],
         "configuration": {
             "title": "Porter",
             "properties": {

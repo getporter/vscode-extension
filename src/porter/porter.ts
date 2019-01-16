@@ -8,7 +8,7 @@ import * as shell from '../utils/shell';
 const logChannel = vscode.window.createOutputChannel("Porter");
 
 async function invokeObj<T>(sh: shell.Shell, command: string, args: string, opts: shell.ExecOpts, fn: (stdout: string) => T): Promise<Errorable<T>> {
-    const bin = config.porterPath() || 'porter';
+    const bin = /* TODO: remove hack once we have Windows builds */ (sh.isWindows() ? 'wsl ' : '') + (config.porterPath() || 'porter');
     const cmd = `${bin} ${command} ${args}`;
     logChannel.appendLine(`$ ${cmd}`);
     return await sh.execObj<T>(
@@ -28,4 +28,8 @@ function andLog<T>(fn: (s: string) => T): (s: string) => T {
 
 export function home(sh: shell.Shell): string {
     return process.env['PORTER_HOME'] || path.join(sh.home(), '.porter');
+}
+
+export async function create(sh: shell.Shell, folder: string): Promise<Errorable<string>> {
+    return await invokeObj(sh, 'create', '', { cwd: folder }, (s) => path.join(folder, 'porter.yaml'));
 }
