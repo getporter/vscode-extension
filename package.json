@@ -12,6 +12,7 @@
     ],
     "activationEvents": [
         "onCommand:porter.createProject",
+        "onCommand:porter.build",
         "onLanguage:yaml"
     ],
     "main": "./out/extension",
@@ -20,6 +21,11 @@
             {
                 "command": "porter.createProject",
                 "title": "Create Project",
+                "category": "Porter"
+            },
+            {
+                "command": "porter.build",
+                "title": "Build",
                 "category": "Porter"
             }
         ],

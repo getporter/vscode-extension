@@ -3,13 +3,14 @@
 import * as vscode from 'vscode';
 
 import * as porter from './porter/porter';
-import { selectWorkspaceFolder } from './utils/host';
+import { selectWorkspaceFolder, longRunning, showPorterResult } from './utils/host';
 import { succeeded } from './utils/errorable';
 import * as shell from './utils/shell';
 
 export function activate(context: vscode.ExtensionContext) {
     const subscriptions = [
-        vscode.commands.registerCommand('porter.createProject', createProject)
+        vscode.commands.registerCommand('porter.createProject', createProject),
+        vscode.commands.registerCommand('porter.build', build),
     ];
 
     context.subscriptions.push(...subscriptions);
@@ -38,4 +39,18 @@ async function createProject(): Promise<void> {
     } else {
         await vscode.window.showErrorMessage(`Unable to scaffold new Porter project in ${rootPath}: ${createResult.error[0]}`);
     }
+}
+
+async function build(): Promise<void> {
+    const folder = await selectWorkspaceFolder("Choose folder to build");
+    if (!folder) {
+        return;
+    }
+
+    const folderPath = folder.uri.fsPath;
+    const buildResult = await longRunning(`Porter building ${folderPath}`,
+        () => porter.build(shell.shell, folderPath)
+    );
+
+    await showPorterResult('build', folderPath, buildResult);
 }

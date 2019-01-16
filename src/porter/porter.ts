@@ -33,3 +33,7 @@ export function home(sh: shell.Shell): string {
 export async function create(sh: shell.Shell, folder: string): Promise<Errorable<string>> {
     return await invokeObj(sh, 'create', '', { cwd: folder }, (s) => path.join(folder, 'porter.yaml'));
 }
+
+export async function build(sh: shell.Shell, folder: string): Promise<Errorable<null>> {
+    return await invokeObj(sh, 'build', '', { cwd: folder }, (s) => null);
+}
