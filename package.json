@@ -14,7 +14,23 @@
         "onLanguage:yaml"
     ],
     "main": "./out/extension",
-    "contributes": {},
+    "contributes": {
+        "configuration": {
+            "title": "Porter",
+            "properties": {
+                "vscode-porter": {
+                    "description": "Porter extension configuration",
+                    "type": "object",
+                    "properties": {
+                        "porter-path": {
+                            "type": "string",
+                            "description": "File path to a porter binary"
+                        }
+                    }
+                }
+            }
+        }
+    },
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
