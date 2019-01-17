@@ -11,10 +11,39 @@
         "Other"
     ],
     "activationEvents": [
+        "onCommand:porter.createProject",
+        "onCommand:porter.build",
         "onLanguage:yaml"
     ],
     "main": "./out/extension",
     "contributes": {
+        "commands": [
+            {
+                "command": "porter.createProject",
+                "title": "Create Project",
+                "category": "Porter"
+            },
+            {
+                "command": "porter.build",
+                "title": "Build",
+                "category": "Porter"
+            }
+        ],
+        "configuration": {
+            "title": "Porter",
+            "properties": {
+                "vscode-porter": {
+                    "description": "Porter extension configuration",
+                    "type": "object",
+                    "properties": {
+                        "porter-path": {
+                            "type": "string",
+                            "description": "File path to a porter binary"
+                        }
+                    }
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
@@ -26,6 +55,10 @@
     "extensionDependencies": [
         "redhat.vscode-yaml"
     ],
+    "dependencies": {
+        "@types/shelljs": "^0.8.1",
+        "shelljs": "^0.8.3"
+    },
     "devDependencies": {
         "typescript": "^2.6.1",
         "vscode": "^1.1.6",
