@@ -7,9 +7,15 @@
     "engines": {
         "vscode": "^1.30.0"
     },
+    "license": "MIT",
     "categories": [
         "Other"
     ],
+    "keywords": [
+        "cnab",
+        "porter"
+    ],
+    "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
     "activationEvents": [
         "onCommand:porter.createProject",
         "onCommand:porter.build",
@@ -65,5 +71,9 @@
         "tslint": "^5.8.0",
         "@types/node": "^7.0.43",
         "@types/mocha": "^2.2.42"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/deislabs/porter-vscode"
     }
 }
