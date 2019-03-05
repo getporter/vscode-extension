@@ -1,12 +1,25 @@
 import * as vscode from 'vscode';
+import * as porter from '../porter/porter';
 import { activateYamlExtension } from "./yaml-extension";
 import { failed } from '../utils/errorable';
-import { porterBaseSchema } from '../schema/porter-base-schema';
-import { mixins, rollInMixinSchema } from '../schema/porter-mixin-schema';
+import { shell } from '../utils/shell';
 
 const PORTER_SCHEMA = 'porter';
 
+let schemaJSON: string | undefined = undefined;
+
 export async function registerYamlSchema(): Promise<void> {
+    // The schema request callback is synchronous, so we need to make sure
+    // the schema is pre-loaded ready for it.
+    const schema = await porter.schema(shell);
+    if (failed(schema)) {
+        vscode.window.showWarningMessage(`Error loading Porter schema. Porter intellisense will not be available.\n\nDetails: ${schema.error[0]}`);
+        return;
+    }
+
+    schemaJSON = schema.result;
+    console.log(schemaJSON);  // TODO: remove once past debug/diagnostic stage
+
     const yamlPlugin = await activateYamlExtension();
     if (failed(yamlPlugin)) {
         vscode.window.showWarningMessage(yamlPlugin.error[0]);
@@ -32,13 +45,5 @@ function onRequestSchemaContent(schemaUri: string): string | undefined {
         return undefined;
     }
 
-    const schema = porterBaseSchema();
-
-    for (const mixin of mixins()) {
-        rollInMixinSchema(schema, mixin);
-    }
-
-    const schemaJSON = JSON.stringify(schema, undefined, 2);
-    console.log(schemaJSON);
     return schemaJSON;
 }
