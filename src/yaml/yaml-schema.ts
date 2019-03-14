@@ -18,7 +18,6 @@ export async function registerYamlSchema(): Promise<void> {
     }
 
     schemaJSON = schema.result;
-    console.log(schemaJSON);  // TODO: remove once past debug/diagnostic stage
 
     const yamlPlugin = await activateYamlExtension();
     if (failed(yamlPlugin)) {
