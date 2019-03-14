@@ -6,14 +6,17 @@ import * as porter from './porter/porter';
 import { selectWorkspaceFolder, longRunning, showPorterResult } from './utils/host';
 import { succeeded } from './utils/errorable';
 import * as shell from './utils/shell';
+import { registerYamlSchema } from './yaml/yaml-schema';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     const subscriptions = [
         vscode.commands.registerCommand('porter.createProject', createProject),
         vscode.commands.registerCommand('porter.build', build),
     ];
 
     context.subscriptions.push(...subscriptions);
+
+    await registerYamlSchema();
 }
 
 export function deactivate() {
