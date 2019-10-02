@@ -20,6 +20,7 @@
         "onCommand:porter.createProject",
         "onCommand:porter.build",
         "onCommand:porter.install",
+        "onDebug",
         "onLanguage:yaml"
     ],
     "main": "./out/extension",
@@ -55,7 +56,56 @@
                     }
                 }
             }
-        }
+        },
+        "debuggers": [
+            {
+                "type": "porter",
+                "label": "Porter",
+                "program": "./out/debugger/debug-adapter.js",
+                "runtime": "node",
+                "configurationAttributes": {
+                    "launch": {
+                        "required": [
+                            "porter-file"
+                        ],
+                        "properties": {
+                            "porter-file": {
+                                "type": "string",
+                                "description": "Absolute path to porter.yaml.",
+                                "default": "${workspaceFolder}/porter.yaml"
+                            },
+                            "stopOnEntry": {
+                                "type": "boolean",
+                                "description": "Automatically stop after launch.",
+                                "default": true
+                            }
+                        }
+                    }
+                },
+                "initialConfigurations": [
+                    {
+                        "type": "porter",
+                        "request": "launch",
+                        "name": "Porter Install",
+                        "porter-file": "${workspaceFolder}/porter.yaml",
+                        "stopOnEntry": true
+                    }
+                ],
+                "configurationSnippets": [
+                    {
+                        "label": "Porter Debug: Install",
+                        "description": "A new configuration for debugging a Porter bundle.",
+                        "body": {
+                            "type": "porter",
+                            "request": "launch",
+                            "name": "Ask for file name",
+                            "porter-file": "^\"\\${workspaceFolder}/porter.yaml\"",
+                            "stopOnEntry": true
+                        }
+                    }
+                ]
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
@@ -69,10 +119,12 @@
     ],
     "dependencies": {
         "@types/shelljs": "^0.8.1",
+        "await-notify": "1.0.1",
         "cnabjs": "0.0.5",
         "mkdirp": "^0.5.1",
         "shelljs": "^0.8.3",
-        "tmp": "^0.0.33"
+        "tmp": "^0.0.33",
+        "vscode-debugadapter": "^1.37.1"
     },
     "devDependencies": {
         "@types/mkdirp": "^0.5.2",
