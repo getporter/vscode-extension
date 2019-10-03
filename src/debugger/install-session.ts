@@ -1,7 +1,7 @@
 import {
     Logger, logger,
     LoggingDebugSession,
-    InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent,
+    TerminatedEvent, StoppedEvent, OutputEvent,
     Scope, Source, StackFrame, Thread, Handles
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
@@ -13,6 +13,7 @@ const { Subject } = require('await-notify');
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     'porter-file': string;
     stopOnEntry?: boolean;
+    porterInputs: string;
 }
 
 const FAKE_THREAD_ID = 1;
@@ -62,12 +63,11 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         // response.body.completionTriggerCharacters = [ ".", "[" ];
 
         // TODO: should this be a thing?
-        response.body.supportsCancelRequest = false;
+        response.body.supportsCancelRequest = true;
 
         response.body.supportsBreakpointLocationsRequest = false;
 
         this.sendResponse(response);
-        this.sendEvent(new InitializedEvent());
     }
 
     protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
@@ -83,7 +83,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         logger.setup(Logger.LogLevel.Stop, false);
 
         await this.configurationDone.wait(1000);
-        this.runtime.start(args['porter-file'], !!args.stopOnEntry);
+        this.runtime.start(args['porter-file'], !!args.stopOnEntry, args.porterInputs);
 
         this.sendResponse(response);
     }
