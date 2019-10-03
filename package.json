@@ -20,7 +20,7 @@
         "onCommand:porter.createProject",
         "onCommand:porter.build",
         "onCommand:porter.install",
-        "onDebug",
+        "onDebugResolve:porter",
         "onLanguage:yaml"
     ],
     "main": "./out/extension",
