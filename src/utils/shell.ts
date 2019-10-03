@@ -29,6 +29,7 @@ export interface Shell {
     exec(cmd: string, stdin?: string): Promise<Errorable<ShellResult>>;
     execObj<T>(cmd: string, cmdDesc: string, opts: ExecOpts, fn: (stdout: string) => T): Promise<Errorable<T>>;
     execCore(cmd: string, opts: any, stdin?: string): Promise<ShellResult>;
+    execToFile(cmd: string, dest: string, opts: any): Promise<ShellResult>;
     unquotedPath(path: string): string;
 }
 
@@ -43,6 +44,7 @@ export const shell: Shell = {
     exec: exec,
     execObj: execObj,
     execCore: execCore,
+    execToFile: execToFile,
     unquotedPath: unquotedPath,
 };
 
@@ -136,6 +138,12 @@ function execCore(cmd: string, opts: any, stdin?: string): Promise<ShellResult> 
         if (stdin) {
             proc.stdin.end(stdin);
         }
+    });
+}
+
+function execToFile(cmd: string, dest: string, opts: any): Promise<ShellResult> {
+    return new Promise<ShellResult>((resolve, reject) => {
+        shelljs.exec(cmd + ` >${dest}`, opts, (code, stdout, stderr) => resolve({ code: code, stdout: stdout, stderr: stderr }));
     });
 }
 
