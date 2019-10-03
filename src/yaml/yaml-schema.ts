@@ -3,6 +3,7 @@ import * as porter from '../porter/porter';
 import { activateYamlExtension } from "./yaml-extension";
 import { failed } from '../utils/errorable';
 import { shell } from '../utils/shell';
+import { longRunning } from '../utils/host';
 
 const PORTER_SCHEMA = 'porter';
 
@@ -11,7 +12,9 @@ let schemaJSON: string | undefined = undefined;
 export async function registerYamlSchema(): Promise<void> {
     // The schema request callback is synchronous, so we need to make sure
     // the schema is pre-loaded ready for it.
-    const schema = await porter.schema(shell);
+    const schema = await longRunning('Loading porter.yaml schema...', () =>
+        porter.schema(shell)
+    );
     if (failed(schema)) {
         vscode.window.showWarningMessage(`Error loading Porter schema. Porter intellisense will not be available.\n\nDetails: ${schema.error[0]}`);
         return;

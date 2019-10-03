@@ -63,14 +63,18 @@
     ],
     "dependencies": {
         "@types/shelljs": "^0.8.1",
-        "shelljs": "^0.8.3"
+        "mkdirp": "^0.5.1",
+        "shelljs": "^0.8.3",
+        "tmp": "^0.0.33"
     },
     "devDependencies": {
-        "typescript": "^2.6.1",
-        "vscode": "^1.1.6",
+        "@types/mkdirp": "^0.5.2",
+        "@types/mocha": "^2.2.42",
+        "@types/node": "10.12.25",
+        "@types/tmp": "0.0.33",
         "tslint": "^5.8.0",
-        "@types/node": "^7.0.43",
-        "@types/mocha": "^2.2.42"
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.6"
     },
     "repository": {
         "type": "git",
