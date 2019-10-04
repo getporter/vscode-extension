@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as porter from '../porter/porter';
 import { activateYamlExtension } from "./yaml-extension";
-import { failed } from '../utils/errorable';
+import { failed, Errorable } from '../utils/errorable';
 import { shell } from '../utils/shell';
 import { longRunning } from '../utils/host';
 
@@ -26,18 +26,30 @@ export async function registerYamlSchema(extensionContext: vscode.ExtensionConte
 }
 
 export async function updateYamlSchema(extensionContext: vscode.ExtensionContext): Promise<void> {
-    const action = schemaJSON ? 'Updating' : 'Loading';
-    const schema = await longRunning(`${action} porter.yaml schema...`, () =>
-        porter.schema(shell)
-    );
+    const schema = await fetchSchema();
     if (failed(schema)) {
         vscode.window.showWarningMessage(`Error loading Porter schema. Porter intellisense will not be available.\n\nDetails: ${schema.error[0]}`);
         return;
     }
 
     if (schema.result && (schema.result !== schemaJSON)) {
+        const message = schemaJSON ?
+            'Updated porter.yaml schema. Please close and re-open porter.yaml for updated intellisense.' :
+            'Loaded porter.yaml schema. Please close and re-open porter.yaml for intellisense.';
         schemaJSON = schema.result;
         extensionContext.globalState.update(LAST_SCHEMA_CACHE_KEY, schemaJSON);
+        await vscode.window.showInformationMessage(message);
+    }
+}
+
+async function fetchSchema(): Promise<Errorable<string>> {
+    if (schemaJSON) {
+        // They already have intellisense, so we don't need to bother them with the background schema update check
+        return await porter.schema(shell);
+    } else {
+        return await longRunning(`Loading porter.yaml schema...`, () =>
+            porter.schema(shell)
+        );
     }
 }
 
