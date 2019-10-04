@@ -6,6 +6,8 @@ import * as config from '../config/config';
 import { Errorable } from '../utils/errorable';
 import * as shell from '../utils/shell';
 import { fs } from '../utils/fs';
+import * as pairs from '../utils/pairs';
+import { CredentialInfo } from './porter.objectmodel';
 
 const logChannel = vscode.window.createOutputChannel("Porter");
 
@@ -32,12 +34,24 @@ export function home(sh: shell.Shell): string {
     return process.env['PORTER_HOME'] || path.join(sh.home(), '.porter');
 }
 
+export async function listCredentialSets(sh: shell.Shell): Promise<Errorable<string[]>> {
+    function parse(stdout: string): string[] {
+        return (JSON.parse(stdout) as CredentialInfo[])
+            .map((c) => c.Name);
+    }
+    return await invokeObj(sh, 'credentials list', '-o json', { }, parse);
+}
+
 export async function create(sh: shell.Shell, folder: string): Promise<Errorable<string>> {
     return await invokeObj(sh, 'create', '', { cwd: folder }, (s) => path.join(folder, 'porter.yaml'));
 }
 
 export async function build(sh: shell.Shell, folder: string): Promise<Errorable<null>> {
     return await invokeObj(sh, 'build', '', { cwd: folder }, (s) => null);
+}
+
+export async function install(sh: shell.Shell, folder: string, name: string, params: { [key: string]: string }, credentialSet: string | undefined): Promise<Errorable<null>> {
+    return await invokeObj(sh, 'install', `${name} ${paramsArgs(params)} ${credentialArg(credentialSet)}`, { cwd: folder }, (s) => null);
 }
 
 export async function schema(sh: shell.Shell): Promise<Errorable<string>> {
@@ -56,4 +70,18 @@ export async function schema(sh: shell.Shell): Promise<Errorable<string>> {
     } finally {
         await fs.unlink(tempFile);
     }
+}
+
+function paramsArgs(parameters: { [key: string]: string }): string {
+    return pairs.fromStringMap(parameters)
+        .filter((p) => !!p.value)
+        .map((p) => `--param ${p.key}=${shell.safeValue(p.value)}`)
+        .join(' ');
+}
+
+function credentialArg(credentialSet: string | undefined): string {
+    if (credentialSet) {
+        return `-c ${credentialSet}`;
+    }
+    return '';
 }

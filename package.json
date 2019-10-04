@@ -19,6 +19,7 @@
     "activationEvents": [
         "onCommand:porter.createProject",
         "onCommand:porter.build",
+        "onCommand:porter.install",
         "onLanguage:yaml"
     ],
     "main": "./out/extension",
@@ -32,6 +33,11 @@
             {
                 "command": "porter.build",
                 "title": "Build",
+                "category": "Porter"
+            },
+            {
+                "command": "porter.install",
+                "title": "Install",
                 "category": "Porter"
             }
         ],
@@ -63,6 +69,7 @@
     ],
     "dependencies": {
         "@types/shelljs": "^0.8.1",
+        "cnabjs": "0.0.5",
         "mkdirp": "^0.5.1",
         "shelljs": "^0.8.3",
         "tmp": "^0.0.33"

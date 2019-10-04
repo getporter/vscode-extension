@@ -4,14 +4,18 @@ import * as vscode from 'vscode';
 
 import * as porter from './porter/porter';
 import { selectWorkspaceFolder, longRunning, showPorterResult } from './utils/host';
-import { succeeded } from './utils/errorable';
+import { succeeded, failed } from './utils/errorable';
 import * as shell from './utils/shell';
 import { registerYamlSchema } from './yaml/yaml-schema';
+import { promptForCredentials } from './utils/credentials';
+import { suggestName, folderSelection, displayName, manifest } from './utils/bundleselection';
+import { promptForParameters } from './utils/parameters';
 
 export async function activate(context: vscode.ExtensionContext) {
     const subscriptions = [
         vscode.commands.registerCommand('porter.createProject', createProject),
         vscode.commands.registerCommand('porter.build', build),
+        vscode.commands.registerCommand('porter.install', install),
     ];
 
     context.subscriptions.push(...subscriptions);
@@ -56,4 +60,43 @@ async function build(): Promise<void> {
     );
 
     await showPorterResult('build', folderPath, buildResult);
+}
+
+async function install(): Promise<void> {
+    const folder = await selectWorkspaceFolder("Choose folder to install");
+    if (!folder) {
+        return;
+    }
+
+    const bundlePick = folderSelection(folder.uri.fsPath);
+    const suggestedName = suggestName(bundlePick);
+    const name = await vscode.window.showInputBox({ prompt: `Install bundle in ${displayName(bundlePick)} as...`, value: suggestedName });
+    if (!name) {
+        return;
+    }
+
+    const bundleManifestResult = await longRunning('Loading bundle...', () => manifest(bundlePick));
+    if (failed(bundleManifestResult)) {
+        await vscode.window.showErrorMessage(`Failed to load bundle: ${bundleManifestResult.error[0]}`);
+        return;
+    }
+
+    const bundleManifest = bundleManifestResult.result;
+
+    const credentialSet = await promptForCredentials(bundleManifest, shell.shell, 'Credential set to install bundle with');
+    if (credentialSet.cancelled) {
+        return;
+    }
+
+    const parameters = await promptForParameters(bundlePick, bundleManifest, 'install', 'Install', 'Enter installation parameters');
+    if (parameters.cancelled) {
+        return;
+    }
+
+    const folderPath = folder.uri.fsPath;
+    const installResult = await longRunning(`Porter installing ${displayName(bundlePick)} as ${name}`,
+        () => porter.install(shell.shell, folderPath, name, parameters.value, credentialSet.value)
+    );
+
+    await showPorterResult('install', name, installResult);
 }
