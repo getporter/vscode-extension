@@ -6,7 +6,7 @@ import * as porter from './porter/porter';
 import { selectWorkspaceFolder, longRunning, showPorterResult } from './utils/host';
 import { succeeded, failed } from './utils/errorable';
 import * as shell from './utils/shell';
-import { registerYamlSchema } from './yaml/yaml-schema';
+import { registerYamlSchema, updateYamlSchema } from './yaml/yaml-schema';
 import { promptForCredentials } from './utils/credentials';
 import { suggestName, folderSelection, displayName, manifest } from './utils/bundleselection';
 import { promptForParameters } from './utils/parameters';
@@ -22,7 +22,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(...subscriptions);
 
-    await registerYamlSchema();
+    await registerYamlSchema(context);
+    updateYamlSchema(context);  // runs in background - do not wait for this to finish activation
 }
 
 export function deactivate() {
