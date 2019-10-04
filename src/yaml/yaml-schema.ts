@@ -28,7 +28,10 @@ export async function registerYamlSchema(extensionContext: vscode.ExtensionConte
 export async function updateYamlSchema(extensionContext: vscode.ExtensionContext): Promise<void> {
     const schema = await fetchSchema();
     if (failed(schema)) {
-        vscode.window.showWarningMessage(`Error loading Porter schema. Porter intellisense will not be available.\n\nDetails: ${schema.error[0]}`);
+        const message = schemaJSON ?
+            `Error checking for Porter schema updates. Porter intellisense may be out of date.\n\nDetails: ${schema.error[0]}` :
+            `Error loading Porter schema. Porter intellisense will not be available.\n\nDetails: ${schema.error[0]}`;
+        await vscode.window.showWarningMessage(message);
         return;
     }
 
