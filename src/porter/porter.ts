@@ -50,8 +50,8 @@ export async function build(sh: shell.Shell, folder: string): Promise<Errorable<
     return await invokeObj(sh, 'build', '', { cwd: folder }, (s) => null);
 }
 
-export async function install(sh: shell.Shell, folder: string, name: string, params: { [key: string]: string }, credentialSet: string | undefined): Promise<Errorable<null>> {
-    return await invokeObj(sh, 'install', `${name} ${paramsArgs(params)} ${credentialArg(credentialSet)}`, { cwd: folder }, (s) => null);
+export async function install(sh: shell.Shell, folder: string, name: string, params: { [key: string]: string }, credentialSet: string | undefined): Promise<Errorable<string>> {
+    return await invokeObj(sh, 'install', `${name} ${paramsArgs(params)} ${credentialArg(credentialSet)}`, { cwd: folder }, (s) => s);
 }
 
 export async function schema(sh: shell.Shell): Promise<Errorable<string>> {

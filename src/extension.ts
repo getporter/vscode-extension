@@ -11,6 +11,8 @@ import { promptForCredentials } from './utils/credentials';
 import { suggestName, folderSelection, displayName, manifest } from './utils/bundleselection';
 import { promptForParameters } from './utils/parameters';
 
+const PORTER_OUTPUT_CHANNEL = vscode.window.createOutputChannel('Porter');
+
 export async function activate(context: vscode.ExtensionContext) {
     const subscriptions = [
         vscode.commands.registerCommand('porter.createProject', createProject),
@@ -98,5 +100,17 @@ async function install(): Promise<void> {
         () => porter.install(shell.shell, folderPath, name, parameters.value, credentialSet.value)
     );
 
+    if (succeeded(installResult)) {
+        showInOutputTitled(`Installed ${displayName(bundlePick)} as ${name}`, installResult.result);
+    }
     await showPorterResult('install', name, installResult);
+}
+
+function showInOutputTitled(title: string, body: string): void {
+    PORTER_OUTPUT_CHANNEL.appendLine('');
+    PORTER_OUTPUT_CHANNEL.appendLine(title);
+    PORTER_OUTPUT_CHANNEL.appendLine('-'.repeat(title.length));
+    PORTER_OUTPUT_CHANNEL.appendLine('');
+    PORTER_OUTPUT_CHANNEL.appendLine(body);
+    PORTER_OUTPUT_CHANNEL.show();
 }
