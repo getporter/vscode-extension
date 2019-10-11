@@ -1,9 +1,10 @@
 import { readFileSync } from 'fs';
 import { EventEmitter } from "events";
+import { InstallInputs } from './session-parameters';
 
 export class PorterInstallRuntime extends EventEmitter {
     private sourceFilePath = '';
-    private porterInputs = '';
+    private installInputs: InstallInputs | undefined = undefined;
 
     public get sourceFile() {
         return this.sourceFilePath;
@@ -16,12 +17,12 @@ export class PorterInstallRuntime extends EventEmitter {
         super();
     }
 
-    public start(porterFilePath: string, stopOnEntry: boolean, porterInputs: string) {
+    public start(porterFilePath: string, stopOnEntry: boolean, installInputs: InstallInputs) {
 
         this.loadSource(porterFilePath);
         this.currentLine = -1;
 
-        this.porterInputs = porterInputs;
+        this.installInputs = installInputs;
 
         if (stopOnEntry) {
             this.step(false, 'stopOnEntry');
@@ -90,9 +91,7 @@ export class PorterInstallRuntime extends EventEmitter {
 
         const line = this.sourceLines[ln].trim();
 
-        // for exploration purposes, stop on each line that contains the 'porterInputs' value
-        // THIS IS NOT REAL
-        if (stepEvent && line.length > 0 && line.indexOf(this.porterInputs) > 0) {
+        if (stepEvent && line.length > 0 && /* TODO: NOT REALLY NOT REALLY AT ALL */ this.testytestytesttest(line)) {
             this.sendEvent(stepEvent);
             return true;
         }
@@ -107,4 +106,14 @@ export class PorterInstallRuntime extends EventEmitter {
         });
     }
 
+    // TODO: this is for proof of concept and not a real thing
+    testytestytesttest(line: string) {
+        const parameters = this.installInputs!.parameters || {};
+        for (const pval of Object.values(parameters)) {
+            if (line.indexOf(pval) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

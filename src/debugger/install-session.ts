@@ -7,13 +7,14 @@ import {
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { basename } from 'path';
 import { PorterInstallRuntime } from './runtime';
+import { InstallInputs } from './session-parameters';
 
 const { Subject } = require('await-notify');
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     'porter-file': string;
     stopOnEntry?: boolean;
-    porterInputs: string;
+    installInputs: InstallInputs;
 }
 
 const FAKE_THREAD_ID = 1;
@@ -83,7 +84,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         logger.setup(Logger.LogLevel.Stop, false);
 
         await this.configurationDone.wait(1000);
-        this.runtime.start(args['porter-file'], !!args.stopOnEntry, args.porterInputs);
+        this.runtime.start(args['porter-file'], !!args.stopOnEntry, args.installInputs);
 
         this.sendResponse(response);
     }

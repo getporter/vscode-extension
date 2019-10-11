@@ -1,4 +1,14 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
+
+import { InstallInputs } from './session-parameters';
+import { folderSelection, suggestName, displayName, manifest } from '../utils/bundleselection';
+import { formatHyphenated } from '../utils/date';
+import { longRunning } from '../utils/host';
+import { failed } from '../utils/errorable';
+import { promptForCredentials } from '../utils/credentials';
+import * as shell from '../utils/shell';
+import { promptForParameters } from '../utils/parameters';
 
 export class PorterInstallConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -17,21 +27,52 @@ async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefi
             config.name = 'Launch';
             config.request = 'launch';
             config['porter-file'] = '${file}';
-            config.stopOnEntry = true;
         }
     }
 
-    if (!config['porter-file']) {
+    const folderPath = path.dirname(vscode.window.activeTextEditor!.document.uri.fsPath);
+
+    if (!config['porter-file'] || !folderPath) {
         await vscode.window.showInformationMessage("Cannot find a Porter file to debug");
         return undefined;	// abort launch
     }
 
-    const porterInputs = await vscode.window.showInputBox({ prompt: "Enter parameters and credentials (no, this is not a real UI)" });
-    if (!porterInputs) {
-        return undefined;
+    // TODO: deduplicate with install command
+
+    const bundlePick = folderSelection(folderPath);
+    const suggestedName = suggestName(bundlePick) + debugSuffix();
+    const name = await vscode.window.showInputBox({ prompt: `Install bundle in ${displayName(bundlePick)} as...`, value: suggestedName });
+    if (!name) {
+        return;
     }
 
-    config.porterInputs = porterInputs;
+    const bundleManifestResult = await longRunning('Loading bundle...', () => manifest(bundlePick));
+    if (failed(bundleManifestResult)) {
+        await vscode.window.showErrorMessage(`Failed to load bundle: ${bundleManifestResult.error[0]}`);
+        return;
+    }
+
+    const bundleManifest = bundleManifestResult.result;
+
+    const credentialSet = await promptForCredentials(bundleManifest, shell.shell, 'Credential set to install bundle with');
+    if (credentialSet.cancelled) {
+        return;
+    }
+
+    const parameters = await promptForParameters(bundlePick, bundleManifest, 'install', 'Install', 'Enter installation parameters');
+    if (parameters.cancelled) {
+        return;
+    }
+
+    const installInputs: InstallInputs = { parameters: parameters.value, credentialSet: credentialSet.value };
+
+    config.stopOnEntry = true;
+    config.installInputs = installInputs;
 
     return config;
+}
+
+function debugSuffix(): string {
+    const timestamp = new Date();
+    return `-debug-${formatHyphenated(timestamp)}`;
 }
