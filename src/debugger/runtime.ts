@@ -97,7 +97,7 @@ export class PorterInstallRuntime extends EventEmitter {
     private fireEventsForLine(ln: number, stepEvent?: string): boolean {
 
         if (stepEvent && this.isFirstLineOfInstallStep(ln)) {
-            // TODO: this.sendEvent('output', whatever_porter_output_from_this_step, this.sourceFile, ln, 0);
+            // TODO: this.sendEvent('output', whatever_porter_output_from_the_previous_step, this.sourceFile, ln, 0);
             this.sendEvent(stepEvent);
             return true;
         }
