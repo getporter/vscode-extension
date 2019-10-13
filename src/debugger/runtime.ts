@@ -56,6 +56,13 @@ export class PorterInstallRuntime extends EventEmitter {
         return [];
     }
 
+    public getParameters(): { name: string, value: string }[] {
+        const inputs = this.installInputs || { parameters: {} };
+        const parameters = inputs.parameters || {};
+        const parameterVariables = Object.entries(parameters).map(([k, v]) => ({ name: k, value: `${v}` }));
+        return parameterVariables;
+    }
+
     private loadSource(file: string) {
         if (this.sourceFilePath !== file) {
             this.sourceFilePath = file;
@@ -89,9 +96,8 @@ export class PorterInstallRuntime extends EventEmitter {
 
     private fireEventsForLine(ln: number, stepEvent?: string): boolean {
 
-        const line = this.sourceLines[ln].trim();
-
-        if (stepEvent && line.length > 0 && /* TODO: NOT REALLY NOT REALLY AT ALL */ this.testytestytesttest(line)) {
+        if (stepEvent && this.isFirstLineOfInstallStep(ln)) {
+            // TODO: this.sendEvent('output', whatever_porter_output_from_this_step, this.sourceFile, ln, 0);
             this.sendEvent(stepEvent);
             return true;
         }
@@ -106,14 +112,31 @@ export class PorterInstallRuntime extends EventEmitter {
         });
     }
 
-    // TODO: this is for proof of concept and not a real thing
-    testytestytesttest(line: string) {
-        const parameters = this.installInputs!.parameters || {};
-        for (const pval of Object.values(parameters)) {
-            if (line.indexOf(pval) >= 0) {
-                return true;
+    private isFirstLineOfInstallStep(ln: number): boolean {
+        // TODO: use a real YAML parser
+        const currentLine = this.sourceLines[ln];
+        if (!currentLine.trim().startsWith('-')) {
+            return false;
+        }
+        const currentIndent = indentSize(currentLine);
+        for (let prevLn = ln - 1; prevLn >= 0; --prevLn) {
+            const prevText = this.sourceLines[prevLn];
+            if (prevText.trim().startsWith(`#`)) {
+                continue;
+            }
+            const indent = indentSize(prevText);
+            if (indent < currentIndent) {
+                return prevText.startsWith('install:');
             }
         }
         return false;
     }
+}
+
+function indentSize(s: string): number {
+    // TODO: I know but just leave it for now okay
+    if (s.startsWith(' ')) {
+        return 1 + indentSize(s.substring(1));
+    }
+    return 0;
 }

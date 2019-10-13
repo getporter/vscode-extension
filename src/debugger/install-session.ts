@@ -115,9 +115,45 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
     protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
         response.body = {
             scopes: [
-                new Scope("Bundle", this.variableHandles.create("bundle"), true)
+                new Scope("Parameters", this.variableHandles.create("parameters"), false),
+                new Scope("Step Outputs", this.variableHandles.create("step-outputs"), false),
             ]
         };
+        this.sendResponse(response);
+    }
+
+    protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.Request): void {
+        const handle = this.variableHandles.get(args.variablesReference);
+        if (handle === 'parameters') {
+            const variables = this.runtime.getParameters();
+            response.body = {
+                variables: variables.map((v) => ({ name: v.name, value: v.value, variablesReference: 0}))
+            };
+        } else if (handle === 'step-outputs') {
+            response.body = {
+                // TODO: do it
+                variables: [{ name: 'NOT DONE YET', value: "I TOLD YOU IT WASN'T DONE YET", variablesReference: 0 }]
+            };
+        }
+        this.sendResponse(response);
+    }
+
+    protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
+        // TODO: this will need attention
+        if (args.expression && args.expression.startsWith('bundle.parameters.')) {
+            const parameterName = args.expression.substring('bundle.parameters.'.length);
+            const variables = this.runtime.getParameters();
+            const variable = variables.find((v) => v.name === parameterName);
+            if (variable) {
+                response.body = { result: variable.value, variablesReference: 0 };
+            } else {
+                response.success = false;
+                response.message = `${args.expression} not defined`;
+            }
+        } else {
+            response.success = false;
+            response.message = `${args.expression} not defined`;
+        }
         this.sendResponse(response);
     }
 
