@@ -1,6 +1,21 @@
 import { readFileSync } from 'fs';
 import { EventEmitter } from "events";
+
+import * as porter from '../porter/porter';
 import { InstallInputs } from './session-parameters';
+import { shell } from '../utils/shell';
+import { Errorable } from '../utils/errorable';
+import { CredentialSource } from '../porter/porter.objectmodel';
+
+export interface VariableInfo {
+    readonly name: string;
+    readonly value: string;
+}
+
+export interface LazyVariableInfo {
+    readonly name: string;
+    readonly value: () => Promise<Errorable<string>>;
+}
 
 export class PorterInstallRuntime extends EventEmitter {
     private sourceFilePath = '';
@@ -56,11 +71,31 @@ export class PorterInstallRuntime extends EventEmitter {
         return [];
     }
 
-    public getParameters(): { name: string, value: string }[] {
+    public getParameters(): VariableInfo[] {
         const inputs = this.installInputs || { parameters: {} };
         const parameters = inputs.parameters || {};
         const parameterVariables = Object.entries(parameters).map(([k, v]) => ({ name: k, value: `${v}` }));
         return parameterVariables;
+    }
+
+    private credentials: LazyVariableInfo[] | undefined = undefined;
+
+    public async getCredentials(): Promise<LazyVariableInfo[]> {
+        if (this.credentials !== undefined)  {
+            return this.credentials;
+        }
+        if (this.installInputs && this.installInputs.credentialSet) {
+            const credentials = await porter.getCredentials(shell, this.installInputs.credentialSet);
+            if (credentials.succeeded) {
+                this.credentials = credentials.result.credentials.map((c) => ({ name: c.name, value: () => this.evaluateCredential(c.source) }));
+                return this.credentials;
+            }
+        }
+        return [];
+    }
+
+    private async evaluateCredential(source: CredentialSource): Promise<Errorable<string>> {
+        return { succeeded: true, result: 'NOT REALLY DONE SORRY' };
     }
 
     private loadSource(file: string) {

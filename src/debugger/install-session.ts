@@ -116,18 +116,26 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         response.body = {
             scopes: [
                 new Scope("Parameters", this.variableHandles.create("parameters"), false),
+                new Scope("Credentials", this.variableHandles.create("credentials"), false),
                 new Scope("Step Outputs", this.variableHandles.create("step-outputs"), false),
             ]
         };
         this.sendResponse(response);
     }
 
-    protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.Request): void {
+    protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.Request): Promise<void> {
         const handle = this.variableHandles.get(args.variablesReference);
         if (handle === 'parameters') {
             const variables = this.runtime.getParameters();
             response.body = {
                 variables: variables.map((v) => ({ name: v.name, value: v.value, variablesReference: 0}))
+            };
+        } else if (handle === 'credentials') {
+            const variables = await this.runtime.getCredentials();
+            const retPromises = variables.map(async (v) => ({ name: v.name, value: await v.value() }));
+            const retValues = await Promise.all(retPromises);
+            response.body = {
+                variables: retValues.map((v) => ({ name: v.name, value: v.value.succeeded ? v.value.result : (`evaluation failed: ${v.value.error[0]}`), variablesReference: 0}))
             };
         } else if (handle === 'step-outputs') {
             response.body = {
@@ -138,7 +146,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         this.sendResponse(response);
     }
 
-    protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
+    protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
         // TODO: this will need attention
         if (args.expression && args.expression.startsWith('bundle.parameters.')) {
             const parameterName = args.expression.substring('bundle.parameters.'.length);
@@ -150,6 +158,22 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
                 response.success = false;
                 response.message = `${args.expression} not defined`;
             }
+        } else if (args.expression && args.expression.startsWith('bundle.credentials.')) {
+            const credentialName = args.expression.substring('bundle.credentials.'.length);
+            const credentials = await this.runtime.getCredentials();
+            const credential = credentials.find((v) => v.name === credentialName);
+            if (credential) {
+                const credentialValue = await credential.value();
+                if (credentialValue.succeeded) {
+                    response.body = { result: credentialValue.result, variablesReference: 0 };
+                } else {
+                    response.success = false;
+                    response.message = `evaluation failed: ${credentialValue.error[0]}`;
+                    }
+            } else {
+                response.success = false;
+                response.message = `${args.expression} not defined`;
+            }
         } else {
             response.success = false;
             response.message = `${args.expression} not defined`;
@@ -157,17 +181,23 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         this.sendResponse(response);
     }
 
-	protected completionsRequest(response: DebugProtocol.CompletionsResponse, args: DebugProtocol.CompletionsArguments): void {
+	protected async completionsRequest(response: DebugProtocol.CompletionsResponse, args: DebugProtocol.CompletionsArguments): Promise<void> {
         if (args.text === 'bundle.') {
             response.body = {
                 targets: [
                     { label: 'parameters' },
+                    { label: 'credentials' },
                     { label: 'outputs' },
                 ]
             };
         } else if (args.text === 'bundle.parameters.') {
             response.body = {
                 targets: this.runtime.getParameters().map((v) => ({ label: v.name }))
+            };
+        } else if (args.text === 'bundle.credentials.') {
+            const credentials = await this.runtime.getCredentials();
+            response.body = {
+                targets: credentials.map((c) => ({ label: c.name }))
             };
         } else if (args.text === 'bundle.outputs.') {
             response.body = {

@@ -7,7 +7,7 @@ import { Errorable } from '../utils/errorable';
 import * as shell from '../utils/shell';
 import { fs } from '../utils/fs';
 import * as pairs from '../utils/pairs';
-import { CredentialInfo } from './porter.objectmodel';
+import { CredentialInfo, CredentialSetContent } from './porter.objectmodel';
 
 const logChannel = vscode.window.createOutputChannel("Porter");
 
@@ -40,6 +40,13 @@ export async function listCredentialSets(sh: shell.Shell): Promise<Errorable<str
             .map((c) => c.Name);
     }
     return await invokeObj(sh, 'credentials list', '-o json', { }, parse);
+}
+
+export async function getCredentials(sh: shell.Shell, credentialSetName: string): Promise<Errorable<CredentialSetContent>> {
+    function parse(stdout: string): CredentialSetContent {
+        return JSON.parse(stdout);
+    }
+    return await invokeObj(sh, 'credentials show', `${credentialSetName} -o json`, { }, parse);
 }
 
 export async function create(sh: shell.Shell, folder: string): Promise<Errorable<string>> {
