@@ -25,18 +25,18 @@ export class PorterInstallRuntime extends EventEmitter {
         this.installInputs = installInputs;
 
         if (stopOnEntry) {
-            this.step(false, 'stopOnEntry');
+            this.step('stopOnEntry');
         } else {
             this.continue();
         }
     }
 
-    public continue(reverse = false) {
-        this.run(reverse, undefined);
+    public continue() {
+        this.run(undefined);
     }
 
-    public step(reverse = false, event = 'stopOnStep') {
-        this.run(reverse, event);
+    public step(event = 'stopOnStep') {
+        this.run(event);
     }
 
     public stack(startFrame: number, endFrame: number): any {
@@ -70,27 +70,15 @@ export class PorterInstallRuntime extends EventEmitter {
         }
     }
 
-    private run(reverse = false, stepEvent?: string) {
-        if (reverse) {
-            for (let ln = this.currentLine-1; ln >= 0; ln--) {
-                if (this.fireEventsForLine(ln, stepEvent)) {
-                    this.currentLine = ln;
-                    return undefined;
-                }
+    private run(stepEvent?: string) {
+        for (let ln = this.currentLine+1; ln < this.sourceLines.length; ln++) {
+            if (this.fireEventsForLine(ln, stepEvent)) {
+                this.currentLine = ln;
+                return true;
             }
-            // no more lines: stop at first line
-            this.currentLine = 0;
-            this.sendEvent('stopOnEntry');
-        } else {
-            for (let ln = this.currentLine+1; ln < this.sourceLines.length; ln++) {
-                if (this.fireEventsForLine(ln, stepEvent)) {
-                    this.currentLine = ln;
-                    return true;
-                }
-            }
-            // no more lines: run to end
-            this.sendEvent('end');
         }
+        // no more lines: run to end
+        this.sendEvent('end');
         return undefined;
     }
 
