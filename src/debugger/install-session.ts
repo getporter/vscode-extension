@@ -60,8 +60,8 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
 
         response.body.supportsStepBack = false;
         response.body.supportsDataBreakpoints = false;
-        response.body.supportsCompletionsRequest = false;
-        // response.body.completionTriggerCharacters = [ ".", "[" ];
+        response.body.supportsCompletionsRequest = true;
+        response.body.completionTriggerCharacters = [ "." ];
 
         // TODO: should this be a thing?
         response.body.supportsCancelRequest = true;
@@ -153,6 +153,26 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         } else {
             response.success = false;
             response.message = `${args.expression} not defined`;
+        }
+        this.sendResponse(response);
+    }
+
+	protected completionsRequest(response: DebugProtocol.CompletionsResponse, args: DebugProtocol.CompletionsArguments): void {
+        if (args.text === 'bundle.') {
+            response.body = {
+                targets: [
+                    { label: 'parameters' },
+                    { label: 'outputs' },
+                ]
+            };
+        } else if (args.text === 'bundle.parameters.') {
+            response.body = {
+                targets: this.runtime.getParameters().map((v) => ({ label: v.name }))
+            };
+        } else if (args.text === 'bundle.outputs.') {
+            response.body = {
+                targets: [ { label: 'NOT_DONE_YET' } ]  // TODO: do it
+            };
         }
         this.sendResponse(response);
     }
