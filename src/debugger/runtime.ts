@@ -85,6 +85,20 @@ export class PorterInstallRuntime extends EventEmitter {
         return [];
     }
 
+    public async getOutputs(): Promise<LazyVariableInfo[]> {
+        // if (this.credentials !== undefined)  {
+        //     return this.credentials;
+        // }
+        // if (this.installInputs && this.installInputs.credentialSet) {
+        //     const credentials = await porter.getCredentials(shell, this.installInputs.credentialSet);
+        //     if (credentials.succeeded) {
+        //         this.credentials = credentials.result.credentials.map((c) => ({ name: c.name, value: () => this.evaluateCredential(c.source) }));
+        //         return this.credentials;
+        //     }
+        // }
+        return [ { name: 'NOT_DONE_YET', value: async () => ({ succeeded: true, result: "I told you, it's not done yet!" }) } ];
+    }
+
     private async evaluateCredential(source: CredentialSource): Promise<Errorable<string>> {
         if (isValue(source)) {
             return { succeeded: true, result: source.value };

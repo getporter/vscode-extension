@@ -153,7 +153,11 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
             const values = await Promise.all(promisedValues);
             return values.map((v) => ({ name: v.name, value: this.displayEvalResult(v.value) }));
         } else if (handle === STEP_OUTPUTS_HANDLE) {
-            return [{ name: 'NOT DONE YET', value: "I TOLD YOU IT WASN'T DONE YET" }];
+            // TODO: deduplicate
+            const variables = await this.runtime.getOutputs();
+            const promisedValues = variables.map(async (v) => ({ name: v.name, value: await v.value() }));
+            const values = await Promise.all(promisedValues);
+            return values.map((v) => ({ name: v.name, value: this.displayEvalResult(v.value) }));
         } else {
             return undefined;
         }
@@ -201,8 +205,20 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
                 return `${expressionText} not defined`;
             }
         } else if (expressionText.startsWith(STEP_OUTPUT_REF_PREFIX)) {
-            // TODO: do it
-            return `NOT DONE YET`;
+            // TODO: deduplicate
+            const outputName = expressionText.substring(STEP_OUTPUT_REF_PREFIX.length);
+            const outputs = await this.runtime.getOutputs();
+            const output = outputs.find((v) => v.name === outputName);
+            if (output) {
+                const outputValue = await output.value();
+                if (outputValue.succeeded) {
+                    return outputValue.result;
+                } else {
+                    return `evaluation failed: ${outputValue.error[0]}`;
+                }
+            } else {
+                return `${expressionText} not defined`;
+            }
         } else {
             return undefined;
         }
@@ -223,7 +239,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
             case REF_EXPRESSION_PREFIX: return ALL_REF_KEYS;
             case PARAMETER_REF_PREFIX: return this.runtime.getParameters().map((v) => v.name);
             case CREDENTIAL_REF_PREFIX: return (await this.runtime.getCredentials()).map((c) => c.name);
-            case STEP_OUTPUT_REF_PREFIX: return ['NOT_DONE_YET'];
+            case STEP_OUTPUT_REF_PREFIX: return (await this.runtime.getOutputs()).map((c) => c.name);
             default: return undefined;
         }
     }
