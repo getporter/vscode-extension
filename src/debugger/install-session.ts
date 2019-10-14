@@ -54,8 +54,6 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         response.body = response.body || {};
         response.body.supportsConfigurationDoneRequest = true;
 
-        // make VS Code to use 'evaluate' when hovering over source
-        // TODO: what does this mean?
         response.body.supportsEvaluateForHovers = true;
 
         response.body.supportsStepBack = false;
@@ -63,8 +61,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         response.body.supportsCompletionsRequest = true;
         response.body.completionTriggerCharacters = [ "." ];
 
-        // TODO: should this be a thing?
-        response.body.supportsCancelRequest = true;
+        response.body.supportsCancelRequest = false;
 
         response.body.supportsBreakpointLocationsRequest = false;
 
@@ -79,8 +76,6 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
     }
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
-
-        // logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
         logger.setup(Logger.LogLevel.Stop, false);
 
         await this.configurationDone.wait(1000);
