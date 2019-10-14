@@ -7,7 +7,7 @@ import {
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { basename } from 'path';
 import { PorterInstallRuntime } from './runtime';
-import { InstallInputs, VariableInfo } from './session-parameters';
+import { InstallInputs, VariableInfo, EVENT_STOP_ON_ENTRY, EVENT_STOP_ON_STEP, EVENT_OUTPUT, EVENT_END } from './session-protocol';
 import { Errorable } from '../utils/errorable';
 
 const { Subject } = require('await-notify');
@@ -46,20 +46,20 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
 
         this.runtime = new PorterInstallRuntime();
 
-        this.runtime.on('stopOnEntry', () => {
+        this.runtime.on(EVENT_STOP_ON_ENTRY, () => {
             this.sendEvent(new StoppedEvent('entry', FAKE_THREAD_ID));
         });
-        this.runtime.on('stopOnStep', () => {
+        this.runtime.on(EVENT_STOP_ON_STEP, () => {
             this.sendEvent(new StoppedEvent('step', FAKE_THREAD_ID));
         });
-        this.runtime.on('output', (text: string, filePath: string, line: number, column: number) => {
+        this.runtime.on(EVENT_OUTPUT, (text: string, filePath: string, line: number, column: number) => {
             const e: DebugProtocol.OutputEvent = new OutputEvent(`${text}\n`);
             e.body.source = this.createSource(filePath);
             e.body.line = this.convertDebuggerLineToClient(line);
             e.body.column = this.convertDebuggerColumnToClient(column);
             this.sendEvent(e);
         });
-        this.runtime.on('end', () => {
+        this.runtime.on(EVENT_END, () => {
             this.sendEvent(new TerminatedEvent());
         });
     }

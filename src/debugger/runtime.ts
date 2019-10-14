@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { EventEmitter } from "events";
 
 import * as porter from '../porter/porter';
-import { InstallInputs, VariableInfo, LazyVariableInfo } from './session-parameters';
+import { InstallInputs, VariableInfo, LazyVariableInfo, EVENT_STOP_ON_ENTRY, EVENT_STOP_ON_STEP, EVENT_END } from './session-protocol';
 import { shell } from '../utils/shell';
 import { Errorable } from '../utils/errorable';
 import { CredentialSource, isValue, isEnv, isCommand, isPath } from '../porter/porter.objectmodel';
@@ -31,7 +31,7 @@ export class PorterInstallRuntime extends EventEmitter {
         this.installInputs = installInputs;
 
         if (stopOnEntry) {
-            this.step('stopOnEntry');
+            this.step(EVENT_STOP_ON_ENTRY);
         } else {
             this.continue();
         }
@@ -41,7 +41,7 @@ export class PorterInstallRuntime extends EventEmitter {
         this.run(undefined);
     }
 
-    public step(event = 'stopOnStep') {
+    public step(event = EVENT_STOP_ON_STEP) {
         this.run(event);
     }
 
@@ -134,14 +134,14 @@ export class PorterInstallRuntime extends EventEmitter {
             }
         }
         // no more lines: run to end
-        this.sendEvent('end');
+        this.sendEvent(EVENT_END);
         return undefined;
     }
 
     private fireEventsForLine(ln: number, stepEvent?: string): boolean {
 
         if (stepEvent && this.isFirstLineOfInstallStep(ln)) {
-            // TODO: this.sendEvent('output', whatever_porter_output_from_the_previous_step, this.sourceFile, ln, 0);
+            // TODO: this.sendEvent(EVENT_OUTPUT, whatever_porter_output_from_the_previous_step, this.sourceFile, ln, 0);
             this.sendEvent(stepEvent);
             return true;
         }

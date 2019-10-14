@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { InstallInputs } from './session-parameters';
+import { InstallInputs } from './session-protocol';
 import { folderSelection, suggestName, displayName, manifest } from '../utils/bundleselection';
 import { formatHyphenated } from '../utils/date';
 import { longRunning } from '../utils/host';
