@@ -145,7 +145,7 @@
         "@types/node": "10.12.25",
         "@types/tmp": "0.0.33",
         "tslint": "^5.8.0",
-        "typescript": "^2.6.1",
+        "typescript": "^3.6.4",
         "vscode": "^1.1.6"
     },
     "repository": {
