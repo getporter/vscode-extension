@@ -9,6 +9,7 @@ import { failed } from '../utils/errorable';
 import { promptForCredentials } from '../utils/credentials';
 import * as shell from '../utils/shell';
 import { promptForParameters } from '../utils/parameters';
+import { fs } from '../utils/fs';
 
 export class PorterInstallConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -19,9 +20,10 @@ export class PorterInstallConfigurationProvider implements vscode.DebugConfigura
 
 async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration | undefined> {
 
+    const editor = vscode.window.activeTextEditor;
+
     // if launch.json is missing or empty
     if (!config.type && !config.request && !config.name) {
-        const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'yaml' && editor.document.uri.fsPath.indexOf('porter.yaml') >= 0) {
             config.type = 'porter';
             config.name = 'Launch';
@@ -30,7 +32,7 @@ async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefi
         }
     }
 
-    const folderPath = path.dirname(vscode.window.activeTextEditor!.document.uri.fsPath);
+    const folderPath = editor ? path.dirname(editor.document.uri.fsPath) : await findPorterManifestDirectory();
 
     if (!config['porter-file'] || !folderPath) {
         await vscode.window.showInformationMessage("Cannot find a Porter file to debug");
@@ -73,6 +75,22 @@ async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefi
     config.stopOnEntry = true;
 
     return config;
+}
+
+async function findPorterManifestDirectory(): Promise<string | undefined> {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders || folders.length === 0) {
+        return undefined;
+    }
+
+    for (const f of folders) {
+        const folderDir = f.uri.fsPath;
+        if (await fs.exists(path.join(folderDir, 'porter.yaml'))) {
+            return folderDir;
+        }
+    }
+
+    return undefined;
 }
 
 function debugSuffix(): string {
