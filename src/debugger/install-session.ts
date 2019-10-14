@@ -11,6 +11,19 @@ import { InstallInputs } from './session-parameters';
 
 const { Subject } = require('await-notify');
 
+const PARAMETERS_HANDLE = 'parameters';
+const CREDENTIALS_HANDLE = 'credentials';
+const STEP_OUTPUTS_HANDLE = 'step-outputs';
+
+const REF_EXPRESSION_PREFIX = 'bundle.';
+const PARAMETER_REF_KEY = 'parameters';
+const CREDENTIAL_REF_KEY = 'credentials';
+const STEP_OUTPUT_REF_KEY = 'outputs';
+const ALL_REF_KEYS = [PARAMETER_REF_KEY, CREDENTIAL_REF_KEY, STEP_OUTPUT_REF_KEY] as const;
+const PARAMETER_REF_PREFIX = `${REF_EXPRESSION_PREFIX}${PARAMETER_REF_KEY}.`;
+const CREDENTIAL_REF_PREFIX = `${REF_EXPRESSION_PREFIX}${CREDENTIAL_REF_KEY}.`;
+const STEP_OUTPUT_REF_PREFIX = `${REF_EXPRESSION_PREFIX}${STEP_OUTPUT_REF_KEY}.`;
+
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     'porter-file': string;
     stopOnEntry?: boolean;
@@ -101,7 +114,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         const stack = this.runtime.stack(startFrame, endFrame);
 
         response.body = {
-            stackFrames: stack.frames.map((f: any) => new StackFrame(f.index, f.name, this.createSource(f.file), this.convertDebuggerLineToClient(f.line))),
+            stackFrames: stack.frames.map((f) => new StackFrame(f.index, f.name, this.createSource(f.file), this.convertDebuggerLineToClient(f.line))),
             totalFrames: stack.count
         };
         this.sendResponse(response);
@@ -110,9 +123,9 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
     protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
         response.body = {
             scopes: [
-                new Scope("Parameters", this.variableHandles.create("parameters"), false),
-                new Scope("Credentials", this.variableHandles.create("credentials"), false),
-                new Scope("Step Outputs", this.variableHandles.create("step-outputs"), false),
+                new Scope("Parameters", this.variableHandles.create(PARAMETERS_HANDLE), false),
+                new Scope("Credentials", this.variableHandles.create(CREDENTIALS_HANDLE), false),
+                new Scope("Step Outputs", this.variableHandles.create(STEP_OUTPUTS_HANDLE), false),
             ]
         };
         this.sendResponse(response);
@@ -120,19 +133,19 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
 
     protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.Request): Promise<void> {
         const handle = this.variableHandles.get(args.variablesReference);
-        if (handle === 'parameters') {
+        if (handle === PARAMETERS_HANDLE) {
             const variables = this.runtime.getParameters();
             response.body = {
                 variables: variables.map((v) => ({ name: v.name, value: v.value, variablesReference: 0}))
             };
-        } else if (handle === 'credentials') {
+        } else if (handle === CREDENTIALS_HANDLE) {
             const variables = await this.runtime.getCredentials();
             const retPromises = variables.map(async (v) => ({ name: v.name, value: await v.value() }));
             const retValues = await Promise.all(retPromises);
             response.body = {
                 variables: retValues.map((v) => ({ name: v.name, value: v.value.succeeded ? v.value.result : (`evaluation failed: ${v.value.error[0]}`), variablesReference: 0}))
             };
-        } else if (handle === 'step-outputs') {
+        } else if (handle === STEP_OUTPUTS_HANDLE) {
             response.body = {
                 // TODO: do it
                 variables: [{ name: 'NOT DONE YET', value: "I TOLD YOU IT WASN'T DONE YET", variablesReference: 0 }]
@@ -145,8 +158,8 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         // TODO: this will need attention
         // NOTE: if we return response.success = false, then no hover tip is shown.  So unfortunately
         // we have to return a body containing an error message.
-        if (args.expression && args.expression.startsWith('bundle.parameters.')) {
-            const parameterName = args.expression.substring('bundle.parameters.'.length);
+        if (args.expression && args.expression.startsWith(PARAMETER_REF_PREFIX)) {
+            const parameterName = args.expression.substring(PARAMETER_REF_PREFIX.length);
             const variables = this.runtime.getParameters();
             const variable = variables.find((v) => v.name === parameterName);
             if (variable) {
@@ -154,8 +167,8 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
             } else {
                 response.body = { result: `${args.expression} not defined`, variablesReference: 0 };
             }
-        } else if (args.expression && args.expression.startsWith('bundle.credentials.')) {
-            const credentialName = args.expression.substring('bundle.credentials.'.length);
+        } else if (args.expression && args.expression.startsWith(CREDENTIAL_REF_PREFIX)) {
+            const credentialName = args.expression.substring(CREDENTIAL_REF_PREFIX.length);
             const credentials = await this.runtime.getCredentials();
             const credential = credentials.find((v) => v.name === credentialName);
             if (credential) {
@@ -168,7 +181,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
             } else {
                 response.body = { result: `${args.expression} not defined`, variablesReference: 0 };
             }
-        } else if (args.expression && args.expression.startsWith('bundle.outputs.')) {
+        } else if (args.expression && args.expression.startsWith(STEP_OUTPUT_REF_PREFIX)) {
             // TODO: do it
             response.body = { result: `NOT DONE YET`, variablesReference: 0 };
         } else {
@@ -179,29 +192,23 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
     }
 
 	protected async completionsRequest(response: DebugProtocol.CompletionsResponse, args: DebugProtocol.CompletionsArguments): Promise<void> {
-        if (args.text === 'bundle.') {
+        const completions = await this.getCompletions(args.text);
+        if (completions) {
             response.body = {
-                targets: [
-                    { label: 'parameters' },
-                    { label: 'credentials' },
-                    { label: 'outputs' },
-                ]
-            };
-        } else if (args.text === 'bundle.parameters.') {
-            response.body = {
-                targets: this.runtime.getParameters().map((v) => ({ label: v.name }))
-            };
-        } else if (args.text === 'bundle.credentials.') {
-            const credentials = await this.runtime.getCredentials();
-            response.body = {
-                targets: credentials.map((c) => ({ label: c.name }))
-            };
-        } else if (args.text === 'bundle.outputs.') {
-            response.body = {
-                targets: [ { label: 'NOT_DONE_YET' } ]  // TODO: do it
+                targets: completions.map((k) => ({ label: k }))
             };
         }
         this.sendResponse(response);
+    }
+
+    private async getCompletions(prefixText: string): Promise<ReadonlyArray<string> | undefined> {
+        switch (prefixText) {
+            case REF_EXPRESSION_PREFIX: return ALL_REF_KEYS;
+            case PARAMETER_REF_PREFIX: return this.runtime.getParameters().map((v) => v.name);
+            case CREDENTIAL_REF_PREFIX: return (await this.runtime.getCredentials()).map((c) => c.name);
+            case STEP_OUTPUT_REF_PREFIX: return ['NOT_DONE_YET'];
+            default: return undefined;
+        }
     }
 
     protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {

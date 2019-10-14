@@ -55,7 +55,7 @@ export class PorterInstallRuntime extends EventEmitter {
         this.run(event);
     }
 
-    public stack(startFrame: number, endFrame: number): any {
+    public stack(startFrame: number, endFrame: number) {
         const frame = {
             index: startFrame,
             name: "Porter",
