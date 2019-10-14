@@ -148,6 +148,8 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
 
     protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
         // TODO: this will need attention
+        // NOTE: if we return response.success = false, then no hover tip is shown.  So unfortunately
+        // we have to return a body containing an error message.
         if (args.expression && args.expression.startsWith('bundle.parameters.')) {
             const parameterName = args.expression.substring('bundle.parameters.'.length);
             const variables = this.runtime.getParameters();
@@ -155,8 +157,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
             if (variable) {
                 response.body = { result: variable.value, variablesReference: 0 };
             } else {
-                response.success = false;
-                response.message = `${args.expression} not defined`;
+                response.body = { result: `${args.expression} not defined`, variablesReference: 0 };
             }
         } else if (args.expression && args.expression.startsWith('bundle.credentials.')) {
             const credentialName = args.expression.substring('bundle.credentials.'.length);
@@ -167,16 +168,17 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
                 if (credentialValue.succeeded) {
                     response.body = { result: credentialValue.result, variablesReference: 0 };
                 } else {
-                    response.success = false;
-                    response.message = `evaluation failed: ${credentialValue.error[0]}`;
-                    }
+                    response.body = { result: `evaluation failed: ${credentialValue.error[0]}`, variablesReference: 0 };
+                }
             } else {
-                response.success = false;
-                response.message = `${args.expression} not defined`;
+                response.body = { result: `${args.expression} not defined`, variablesReference: 0 };
             }
+        } else if (args.expression && args.expression.startsWith('bundle.outputs.')) {
+            // TODO: do it
+            response.body = { result: `NOT DONE YET`, variablesReference: 0 };
         } else {
             response.success = false;
-            response.message = `${args.expression} not defined`;
+            response.body = { result: `${args.expression} not defined`, variablesReference: 0 };
         }
         this.sendResponse(response);
     }

@@ -5,7 +5,8 @@ import * as porter from '../porter/porter';
 import { InstallInputs } from './session-parameters';
 import { shell } from '../utils/shell';
 import { Errorable } from '../utils/errorable';
-import { CredentialSource } from '../porter/porter.objectmodel';
+import { CredentialSource, isValue, isEnv, isCommand, isPath } from '../porter/porter.objectmodel';
+import { fs } from '../utils/fs';
 
 export interface VariableInfo {
     readonly name: string;
@@ -95,7 +96,37 @@ export class PorterInstallRuntime extends EventEmitter {
     }
 
     private async evaluateCredential(source: CredentialSource): Promise<Errorable<string>> {
-        return { succeeded: true, result: 'NOT REALLY DONE SORRY' };
+        if (isValue(source)) {
+            return { succeeded: true, result: source.value };
+        } else if (isEnv(source)) {
+            const value = process.env[source.env];
+            if (value) {
+                return { succeeded: true, result: value };
+            } else {
+                return { succeeded: false, error: [`No environment variable ${source.env}`] };
+            }
+        } else if (isPath(source)) {
+            try {
+                const fileContent = await fs.readFile(source.path, 'utf8');
+                return { succeeded: true, result: fileContent };
+            } catch (err) {
+                return { succeeded: false, error: [`Error reading file ${source.path}: ${err}`] };
+            }
+        } else if (isCommand(source)) {
+            const sr = await shell.exec(source.command);
+            if (sr.succeeded) {
+                if (sr.result.code === 0) {
+                    return { succeeded: true, result: sr.result.stdout };
+                } else {
+                    return { succeeded: false, error: [`Shell command '${source.command}' failed: ${sr.result.stderr}`] };
+                }
+            } else {
+                return { succeeded: false, error: [`Failed to run shell command '${source.command}'`] };
+            }
+        } else {
+            const key = source ? Object.keys(source)[0] : undefined;
+            return { succeeded: false, error: [`Cannot evaluate credential type '${key || '(unknown)'}'`] };
+        }
     }
 
     private loadSource(file: string) {
