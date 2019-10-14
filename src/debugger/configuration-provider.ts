@@ -46,28 +46,31 @@ async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefi
         return;
     }
 
-    const bundleManifestResult = await longRunning('Loading bundle...', () => manifest(bundlePick));
-    if (failed(bundleManifestResult)) {
-        await vscode.window.showErrorMessage(`Failed to load bundle: ${bundleManifestResult.error[0]}`);
-        return;
+    if (!config.installInputs) {
+        const bundleManifestResult = await longRunning('Loading bundle...', () => manifest(bundlePick));
+        if (failed(bundleManifestResult)) {
+            await vscode.window.showErrorMessage(`Failed to load bundle: ${bundleManifestResult.error[0]}`);
+            return;
+        }
+
+        const bundleManifest = bundleManifestResult.result;
+
+        const credentialSet = await promptForCredentials(bundleManifest, shell.shell, 'Credential set to install bundle with');
+        if (credentialSet.cancelled) {
+            return;
+        }
+
+        const parameters = await promptForParameters(bundlePick, bundleManifest, 'install', 'Install', 'Enter installation parameters');
+        if (parameters.cancelled) {
+            return;
+        }
+
+        const installInputs: InstallInputs = { parameters: parameters.value, credentialSet: credentialSet.value };
+
+        config.installInputs = installInputs;
     }
-
-    const bundleManifest = bundleManifestResult.result;
-
-    const credentialSet = await promptForCredentials(bundleManifest, shell.shell, 'Credential set to install bundle with');
-    if (credentialSet.cancelled) {
-        return;
-    }
-
-    const parameters = await promptForParameters(bundlePick, bundleManifest, 'install', 'Install', 'Enter installation parameters');
-    if (parameters.cancelled) {
-        return;
-    }
-
-    const installInputs: InstallInputs = { parameters: parameters.value, credentialSet: credentialSet.value };
 
     config.stopOnEntry = true;
-    config.installInputs = installInputs;
 
     return config;
 }

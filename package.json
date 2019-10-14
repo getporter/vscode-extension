@@ -78,6 +78,19 @@
                                 "type": "boolean",
                                 "description": "Automatically stop after launch.",
                                 "default": true
+                            },
+                            "installInputs": {
+                                "type": "object",
+                                "description": "The install command inputs with which to debug (suppresses prompting for inputs)",
+                                "default": null,
+                                "properties": {
+                                    "parameters": {
+                                        "type": "object"
+                                    },
+                                    "credentialSet": {
+                                        "type": "string"
+                                    }
+                                }
                             }
                         }
                     }
