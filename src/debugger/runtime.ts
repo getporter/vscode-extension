@@ -86,17 +86,32 @@ export class PorterInstallRuntime extends EventEmitter {
     }
 
     public async getOutputs(): Promise<LazyVariableInfo[]> {
-        // if (this.credentials !== undefined)  {
-        //     return this.credentials;
-        // }
-        // if (this.installInputs && this.installInputs.credentialSet) {
-        //     const credentials = await porter.getCredentials(shell, this.installInputs.credentialSet);
-        //     if (credentials.succeeded) {
-        //         this.credentials = credentials.result.credentials.map((c) => ({ name: c.name, value: () => this.evaluateCredential(c.source) }));
-        //         return this.credentials;
-        //     }
-        // }
-        return [ { name: 'NOT_DONE_YET', value: async () => ({ succeeded: true, result: "I told you, it's not done yet!" }) } ];
+        // TODO: don't lie Ivan it's not polite
+        // TODO: also don't parse YAML yourself Ivan you'll just get everything filthy
+        const outputs = Array.of<LazyVariableInfo>();
+        let inOutputsArray = false;
+        let outputsIndentLevel = 0;
+        for (let ln = 0; ln <= this.currentLine; ++ln) {
+            const line = this.sourceLines[ln];
+            if (inOutputsArray) {
+                if (indentSize(line) <= outputsIndentLevel) {
+                    inOutputsArray = false;
+                    outputsIndentLevel = 0;
+                } else if (line.includes('name:')) {
+                    // We has it, we has the output*
+                    // *conditions apply which I ignore for now
+                    const outputName = dequote(line.substring(line.indexOf('name:') + 'name:'.length).trim());
+                    outputs.push({
+                        name: outputName,
+                        value: async () => ({ succeeded: true, result: `(value of output ${outputName} TBD)` })
+                    });
+                }
+            } else if (line.trim() === 'outputs:') {
+                inOutputsArray = true;
+                outputsIndentLevel = indentSize(line);
+            }
+        }
+        return outputs;
     }
 
     private async evaluateCredential(source: CredentialSource): Promise<Errorable<string>> {
@@ -197,4 +212,15 @@ function indentSize(s: string): number {
         return 1 + indentSize(s.substring(1));
     }
     return 0;
+}
+
+function dequote(s: string): string {
+    // TODO: Yes I know about this one too it will go away when I use a proper parser okay
+    if (s.startsWith('"') || s.startsWith("'")) {
+        return dequote(s.substr(1));
+    }
+    if (s.endsWith('"') || s.endsWith("'")) {
+        return dequote(s.substr(0, s.length - 1));
+    }
+    return s;
 }
