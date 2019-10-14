@@ -155,40 +155,48 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
     }
 
     protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
-        // TODO: this will need attention
         // NOTE: if we return response.success = false, then no hover tip is shown.  So unfortunately
-        // we have to return a body containing an error message.
-        if (args.expression && args.expression.startsWith(PARAMETER_REF_PREFIX)) {
-            const parameterName = args.expression.substring(PARAMETER_REF_PREFIX.length);
+        // even if evaluation fails we have to return the error message through a 'success' body.
+        const evaluated = await this.evaluateExpression(args.expression);
+        if (evaluated) {
+            response.body = { result: evaluated, variablesReference: 0 };
+        }
+        this.sendResponse(response);
+    }
+
+    private async evaluateExpression(expressionText: string): Promise<string | undefined> {
+        if (!expressionText) {
+            return undefined;
+        }
+        if (expressionText.startsWith(PARAMETER_REF_PREFIX)) {
+            const parameterName = expressionText.substring(PARAMETER_REF_PREFIX.length);
             const variables = this.runtime.getParameters();
             const variable = variables.find((v) => v.name === parameterName);
             if (variable) {
-                response.body = { result: variable.value, variablesReference: 0 };
+                return variable.value;
             } else {
-                response.body = { result: `${args.expression} not defined`, variablesReference: 0 };
+                return `${expressionText} not defined`;
             }
-        } else if (args.expression && args.expression.startsWith(CREDENTIAL_REF_PREFIX)) {
-            const credentialName = args.expression.substring(CREDENTIAL_REF_PREFIX.length);
+        } else if (expressionText.startsWith(CREDENTIAL_REF_PREFIX)) {
+            const credentialName = expressionText.substring(CREDENTIAL_REF_PREFIX.length);
             const credentials = await this.runtime.getCredentials();
             const credential = credentials.find((v) => v.name === credentialName);
             if (credential) {
                 const credentialValue = await credential.value();
                 if (credentialValue.succeeded) {
-                    response.body = { result: credentialValue.result, variablesReference: 0 };
+                    return credentialValue.result;
                 } else {
-                    response.body = { result: `evaluation failed: ${credentialValue.error[0]}`, variablesReference: 0 };
+                    return `evaluation failed: ${credentialValue.error[0]}`;
                 }
             } else {
-                response.body = { result: `${args.expression} not defined`, variablesReference: 0 };
+                return `${expressionText} not defined`;
             }
-        } else if (args.expression && args.expression.startsWith(STEP_OUTPUT_REF_PREFIX)) {
+        } else if (expressionText.startsWith(STEP_OUTPUT_REF_PREFIX)) {
             // TODO: do it
-            response.body = { result: `NOT DONE YET`, variablesReference: 0 };
+            return `NOT DONE YET`;
         } else {
-            response.success = false;
-            response.body = { result: `${args.expression} not defined`, variablesReference: 0 };
+            return undefined;
         }
-        this.sendResponse(response);
     }
 
 	protected async completionsRequest(response: DebugProtocol.CompletionsResponse, args: DebugProtocol.CompletionsArguments): Promise<void> {
