@@ -7,7 +7,8 @@ import {
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { basename } from 'path';
 import { PorterInstallRuntime } from './runtime';
-import { InstallInputs } from './session-parameters';
+import { InstallInputs, VariableInfo } from './session-parameters';
+import { Errorable } from '../utils/errorable';
 
 const { Subject } = require('await-notify');
 
@@ -133,25 +134,33 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
 
     protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.Request): Promise<void> {
         const handle = this.variableHandles.get(args.variablesReference);
-        if (handle === PARAMETERS_HANDLE) {
-            const variables = this.runtime.getParameters();
+        const variables = await this.evaluateVariables(handle);
+        if (variables) {
             response.body = {
                 variables: variables.map((v) => ({ name: v.name, value: v.value, variablesReference: 0}))
             };
-        } else if (handle === CREDENTIALS_HANDLE) {
-            const variables = await this.runtime.getCredentials();
-            const retPromises = variables.map(async (v) => ({ name: v.name, value: await v.value() }));
-            const retValues = await Promise.all(retPromises);
-            response.body = {
-                variables: retValues.map((v) => ({ name: v.name, value: v.value.succeeded ? v.value.result : (`evaluation failed: ${v.value.error[0]}`), variablesReference: 0}))
-            };
-        } else if (handle === STEP_OUTPUTS_HANDLE) {
-            response.body = {
-                // TODO: do it
-                variables: [{ name: 'NOT DONE YET', value: "I TOLD YOU IT WASN'T DONE YET", variablesReference: 0 }]
-            };
         }
         this.sendResponse(response);
+    }
+
+    private async evaluateVariables(handle: string): Promise<VariableInfo[] | undefined> {
+        if (handle === PARAMETERS_HANDLE) {
+            const variables = this.runtime.getParameters();
+            return variables.map((v) => ({ name: v.name, value: v.value }));
+        } else if (handle === CREDENTIALS_HANDLE) {
+            const variables = await this.runtime.getCredentials();
+            const promisedValues = variables.map(async (v) => ({ name: v.name, value: await v.value() }));
+            const values = await Promise.all(promisedValues);
+            return values.map((v) => ({ name: v.name, value: this.displayEvalResult(v.value) }));
+        } else if (handle === STEP_OUTPUTS_HANDLE) {
+            return [{ name: 'NOT DONE YET', value: "I TOLD YOU IT WASN'T DONE YET" }];
+        } else {
+            return undefined;
+        }
+    }
+
+    private displayEvalResult(value: Errorable<string>): string {
+        return value.succeeded ? value.result : (`evaluation failed: ${value.error[0]}`);
     }
 
     protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {

@@ -2,21 +2,11 @@ import { readFileSync } from 'fs';
 import { EventEmitter } from "events";
 
 import * as porter from '../porter/porter';
-import { InstallInputs } from './session-parameters';
+import { InstallInputs, VariableInfo, LazyVariableInfo } from './session-parameters';
 import { shell } from '../utils/shell';
 import { Errorable } from '../utils/errorable';
 import { CredentialSource, isValue, isEnv, isCommand, isPath } from '../porter/porter.objectmodel';
 import { fs } from '../utils/fs';
-
-export interface VariableInfo {
-    readonly name: string;
-    readonly value: string;
-}
-
-export interface LazyVariableInfo {
-    readonly name: string;
-    readonly value: () => Promise<Errorable<string>>;
-}
 
 export class PorterInstallRuntime extends EventEmitter {
     private sourceFilePath = '';
