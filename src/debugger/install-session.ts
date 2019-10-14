@@ -169,15 +169,22 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
 
     protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
         // NOTE: if we return response.success = false, then no hover tip is shown.  So unfortunately
-        // even if evaluation fails we have to return the error message through a 'success' body.
+        // in a hover context if evaluation fails we still have to return the error message through a 'success' body
+        // - but in a REPL context we should error!
         const evaluated = await this.evaluateExpression(args.expression);
         if (evaluated) {
-            response.body = { result: evaluated, variablesReference: 0 };
+            const [evalResult, ok] = evaluated;
+            if (ok || args.context === 'hover') {
+                response.body = { result: evalResult, variablesReference: 0 };
+            } else {
+                response.success = false;
+                response.message = evalResult;
+            }
         }
         this.sendResponse(response);
     }
 
-    private async evaluateExpression(expressionText: string): Promise<string | undefined> {
+    private async evaluateExpression(expressionText: string): Promise<[string, boolean] /* TODO: nicer */ | undefined> {
         if (!expressionText) {
             return undefined;
         }
@@ -186,9 +193,9 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
             const variables = this.runtime.getParameters();
             const variable = variables.find((v) => v.name === parameterName);
             if (variable) {
-                return variable.value;
+                return [variable.value, true];
             } else {
-                return `${expressionText} not defined`;
+                return [`${expressionText} not defined`, false];
             }
         } else if (expressionText.startsWith(CREDENTIAL_REF_PREFIX)) {
             const credentialName = expressionText.substring(CREDENTIAL_REF_PREFIX.length);
@@ -197,12 +204,12 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
             if (credential) {
                 const credentialValue = await credential.value();
                 if (credentialValue.succeeded) {
-                    return credentialValue.result;
+                    return [credentialValue.result, true];
                 } else {
-                    return `evaluation failed: ${credentialValue.error[0]}`;
+                    return [`evaluation failed: ${credentialValue.error[0]}`, false];
                 }
             } else {
-                return `${expressionText} not defined`;
+                return [`${expressionText} not defined`, false];
             }
         } else if (expressionText.startsWith(STEP_OUTPUT_REF_PREFIX)) {
             // TODO: deduplicate
@@ -212,12 +219,12 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
             if (output) {
                 const outputValue = await output.value();
                 if (outputValue.succeeded) {
-                    return outputValue.result;
+                    return [outputValue.result, true];
                 } else {
-                    return `evaluation failed: ${outputValue.error[0]}`;
+                    return [`evaluation failed: ${outputValue.error[0]}`, false];
                 }
             } else {
-                return `${expressionText} not defined`;
+                return [`${expressionText} not defined`, false];
             }
         } else {
             return undefined;
