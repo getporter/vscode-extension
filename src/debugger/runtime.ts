@@ -13,7 +13,8 @@ import { flatten } from '../utils/array';
 export class PorterInstallRuntime extends EventEmitter {
     private sourceFilePath = '';
     private sourceYAML: ast.PorterManifestYAML | undefined = undefined;
-    private installInputs: InstallInputs | undefined = undefined;
+    private actionInputs: InstallInputs | undefined = undefined;
+    private readonly actionName = 'install';
 
     public get sourceFile() {
         return this.sourceFilePath;
@@ -26,12 +27,12 @@ export class PorterInstallRuntime extends EventEmitter {
         super();
     }
 
-    public start(porterFilePath: string, stopOnEntry: boolean, installInputs: InstallInputs) {
+    public start(porterFilePath: string, stopOnEntry: boolean, actionInputs: InstallInputs) {
 
         this.loadSource(porterFilePath);
         this.currentLine = -1;
 
-        this.installInputs = installInputs;
+        this.actionInputs = actionInputs;
 
         if (stopOnEntry) {
             this.step(EVENT_STOP_ON_ENTRY);
@@ -66,7 +67,7 @@ export class PorterInstallRuntime extends EventEmitter {
     }
 
     public getParameters(): VariableInfo[] {
-        const inputs = this.installInputs || { parameters: {} };
+        const inputs = this.actionInputs || { parameters: {} };
         const parameters = inputs.parameters || {};
         const parameterVariables = Object.entries(parameters).map(([k, v]) => ({ name: k, value: `${v}` }));
         return parameterVariables;
@@ -78,8 +79,8 @@ export class PorterInstallRuntime extends EventEmitter {
         if (this.credentials !== undefined)  {
             return this.credentials;
         }
-        if (this.installInputs && this.installInputs.credentialSet) {
-            const credentials = await porter.getCredentials(shell, this.installInputs.credentialSet);
+        if (this.actionInputs && this.actionInputs.credentialSet) {
+            const credentials = await porter.getCredentials(shell, this.actionInputs.credentialSet);
             if (credentials.succeeded) {
                 this.credentials = credentials.result.credentials.map((c) => ({ name: c.name, value: () => this.evaluateCredential(c.source) }));
                 return this.credentials;
@@ -93,7 +94,7 @@ export class PorterInstallRuntime extends EventEmitter {
             return [];
         }
 
-        const action = this.sourceYAML.actions.find((a) => a.name === 'install');
+        const action = this.sourceYAML.actions.find((a) => a.name === this.actionName);
         if (!action) {
             return [];
         }
@@ -164,7 +165,7 @@ export class PorterInstallRuntime extends EventEmitter {
 
     private fireEventsForLine(ln: number, stepEvent?: string): boolean {
 
-        if (stepEvent && this.isFirstLineOfInstallStep(ln)) {
+        if (stepEvent && this.isFirstLineOfActionStep(ln)) {
             // TODO: this.sendEvent(EVENT_OUTPUT, whatever_porter_output_from_the_previous_step, this.sourceFile, ln, 0);
             this.sendEvent(stepEvent);
             return true;
@@ -180,12 +181,12 @@ export class PorterInstallRuntime extends EventEmitter {
         });
     }
 
-    private isFirstLineOfInstallStep(ln: number): boolean {
+    private isFirstLineOfActionStep(ln: number): boolean {
         if (!this.sourceYAML) {
             return false;
         }
 
-        const action = this.sourceYAML.actions.find((a) => a.name === 'install');
+        const action = this.sourceYAML.actions.find((a) => a.name === this.actionName);
         if (!action) {
             return false;
         }
