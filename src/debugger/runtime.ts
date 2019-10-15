@@ -181,30 +181,15 @@ export class PorterInstallRuntime extends EventEmitter {
     }
 
     private isFirstLineOfInstallStep(ln: number): boolean {
-        // TODO: use a real YAML parser
-        const currentLine = this.sourceLines[ln];
-        if (!currentLine.trim().startsWith('-')) {
+        if (!this.sourceYAML) {
             return false;
         }
-        const currentIndent = indentSize(currentLine);
-        for (let prevLn = ln - 1; prevLn >= 0; --prevLn) {
-            const prevText = this.sourceLines[prevLn];
-            if (prevText.trim().startsWith(`#`)) {
-                continue;
-            }
-            const indent = indentSize(prevText);
-            if (indent < currentIndent) {
-                return prevText.startsWith('install:');
-            }
-        }
-        return false;
-    }
-}
 
-function indentSize(s: string): number {
-    // TODO: I know but just leave it for now okay
-    if (s.startsWith(' ')) {
-        return 1 + indentSize(s.substring(1));
+        const action = this.sourceYAML.actions.find((a) => a.name === 'install');
+        if (!action) {
+            return false;
+        }
+
+        return action.steps.some((s) => s.startLine === ln);
     }
-    return 0;
 }
