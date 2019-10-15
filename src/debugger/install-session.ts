@@ -74,7 +74,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         response.body.supportsStepBack = false;
         response.body.supportsDataBreakpoints = false;
         response.body.supportsCompletionsRequest = true;
-        response.body.completionTriggerCharacters = [ ".", "b" ];
+        response.body.completionTriggerCharacters = [ ".", EXPRESSION_INITIAL_PREFIX ];
 
         response.body.supportsCancelRequest = false;
 
