@@ -7,7 +7,7 @@ import {
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { basename } from 'path';
 import { PorterInstallRuntime } from './runtime';
-import { InstallInputs, VariableInfo, EVENT_STOP_ON_ENTRY, EVENT_STOP_ON_STEP, EVENT_OUTPUT, EVENT_END } from './session-protocol';
+import { InstallInputs, VariableInfo, EVENT_STOP_ON_ENTRY, EVENT_STOP_ON_STEP, EVENT_OUTPUT, EVENT_END, LazyVariableInfo } from './session-protocol';
 import { Errorable } from '../utils/errorable';
 
 const { Subject } = require('await-notify');
@@ -200,35 +200,27 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
             }
         } else if (expressionText.startsWith(CREDENTIAL_REF_PREFIX)) {
             const credentialName = expressionText.substring(CREDENTIAL_REF_PREFIX.length);
-            const credentials = await this.runtime.getCredentials();
-            const credential = credentials.find((v) => v.name === credentialName);
-            if (credential) {
-                const credentialValue = await credential.value();
-                if (credentialValue.succeeded) {
-                    return [credentialValue.result, true];
-                } else {
-                    return [`evaluation failed: ${credentialValue.error[0]}`, false];
-                }
-            } else {
-                return [`${expressionText} not defined`, false];
-            }
+            return await this.evaluateAsyncVariable(this.runtime.getCredentials(), credentialName, expressionText);
         } else if (expressionText.startsWith(STEP_OUTPUT_REF_PREFIX)) {
-            // TODO: deduplicate
             const outputName = expressionText.substring(STEP_OUTPUT_REF_PREFIX.length);
-            const outputs = await this.runtime.getOutputs();
-            const output = outputs.find((v) => v.name === outputName);
-            if (output) {
-                const outputValue = await output.value();
-                if (outputValue.succeeded) {
-                    return [outputValue.result, true];
-                } else {
-                    return [`evaluation failed: ${outputValue.error[0]}`, false];
-                }
-            } else {
-                return [`${expressionText} not defined`, false];
-            }
+            return await this.evaluateAsyncVariable(this.runtime.getOutputs(), outputName, expressionText);
         } else {
             return undefined;
+        }
+    }
+
+    private async evaluateAsyncVariable(variablesPromise: Promise<LazyVariableInfo[]>, variableName: string, expressionText: string): Promise<[string, boolean]> {
+        const variables = await variablesPromise;
+        const variable = variables.find((v) => v.name === variableName);
+        if (variable) {
+            const variableValue = await variable.value();
+            if (variableValue.succeeded) {
+                return [variableValue.result, true];
+            } else {
+                return [`evaluation failed: ${variableValue.error[0]}`, false];
+            }
+        } else {
+            return [`${expressionText} not defined`, false];
         }
     }
 
