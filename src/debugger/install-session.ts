@@ -16,6 +16,7 @@ const PARAMETERS_HANDLE = 'parameters';
 const CREDENTIALS_HANDLE = 'credentials';
 const STEP_OUTPUTS_HANDLE = 'step-outputs';
 
+const EXPRESSION_INITIAL_PREFIX = 'b';
 const REF_EXPRESSION_PREFIX = 'bundle.';
 const PARAMETER_REF_KEY = 'parameters';
 const CREDENTIAL_REF_KEY = 'credentials';
@@ -73,7 +74,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         response.body.supportsStepBack = false;
         response.body.supportsDataBreakpoints = false;
         response.body.supportsCompletionsRequest = true;
-        response.body.completionTriggerCharacters = [ "." ];
+        response.body.completionTriggerCharacters = [ ".", "b" ];
 
         response.body.supportsCancelRequest = false;
 
@@ -243,6 +244,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
 
     private async getCompletions(prefixText: string): Promise<ReadonlyArray<string> | undefined> {
         switch (prefixText) {
+            case EXPRESSION_INITIAL_PREFIX: return ['bundle'];
             case REF_EXPRESSION_PREFIX: return ALL_REF_KEYS;
             case PARAMETER_REF_PREFIX: return this.runtime.getParameters().map((v) => v.name);
             case CREDENTIAL_REF_PREFIX: return (await this.runtime.getCredentials()).map((c) => c.name);
