@@ -137,7 +137,8 @@
         "mkdirp": "^0.5.1",
         "shelljs": "^0.8.3",
         "tmp": "^0.0.33",
-        "vscode-debugadapter": "^1.37.1"
+        "vscode-debugadapter": "^1.37.1",
+        "yaml-ast-parser": "0.0.43"
     },
     "devDependencies": {
         "@types/mkdirp": "^0.5.2",

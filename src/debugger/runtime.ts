@@ -7,9 +7,12 @@ import { shell } from '../utils/shell';
 import { Errorable } from '../utils/errorable';
 import { CredentialSource, isValue, isEnv, isCommand, isPath } from '../porter/porter.objectmodel';
 import { fs } from '../utils/fs';
+import * as ast from './ast';
+import { flatten } from '../utils/array';
 
 export class PorterInstallRuntime extends EventEmitter {
     private sourceFilePath = '';
+    private sourceYAML: ast.PorterManifestYAML | undefined = undefined;
     private installInputs: InstallInputs | undefined = undefined;
 
     public get sourceFile() {
@@ -86,32 +89,22 @@ export class PorterInstallRuntime extends EventEmitter {
     }
 
     public async getOutputs(): Promise<LazyVariableInfo[]> {
-        // TODO: don't lie Ivan it's not polite
-        // TODO: also don't parse YAML yourself Ivan you'll just get everything filthy
-        const outputs = Array.of<LazyVariableInfo>();
-        let inOutputsArray = false;
-        let outputsIndentLevel = 0;
-        for (let ln = 0; ln <= this.currentLine; ++ln) {
-            const line = this.sourceLines[ln];
-            if (inOutputsArray) {
-                if (indentSize(line) <= outputsIndentLevel) {
-                    inOutputsArray = false;
-                    outputsIndentLevel = 0;
-                } else if (line.includes('name:')) {
-                    // We has it, we has the output*
-                    // *conditions apply which I ignore for now
-                    const outputName = dequote(line.substring(line.indexOf('name:') + 'name:'.length).trim());
-                    outputs.push({
-                        name: outputName,
-                        value: async () => ({ succeeded: true, result: `(value of output ${outputName} TBD)` })
-                    });
-                }
-            } else if (line.trim() === 'outputs:') {
-                inOutputsArray = true;
-                outputsIndentLevel = indentSize(line);
-            }
+        if (!this.sourceYAML) {
+            return [];
         }
-        return outputs;
+
+        const action = this.sourceYAML.actions.find((a) => a.name === 'install');
+        if (!action) {
+            return [];
+        }
+
+        const stepsBeforeNow = action.steps.filter((s) => s.startLine < this.currentLine);
+        const outputsBeforeNow = flatten(...stepsBeforeNow.map((s) => s.outputs));
+
+        return outputsBeforeNow.map((o) => ({
+            name: o.name,
+            value: async () => ({ succeeded: true, result: `(value of output ${o.name} TBD)` })
+        }));
     }
 
     private async evaluateCredential(source: CredentialSource): Promise<Errorable<string>> {
@@ -151,7 +144,9 @@ export class PorterInstallRuntime extends EventEmitter {
     private loadSource(file: string) {
         if (this.sourceFilePath !== file) {
             this.sourceFilePath = file;
-            this.sourceLines = readFileSync(this.sourceFilePath).toString().split('\n');
+            const sourceText = readFileSync(this.sourceFilePath).toString();
+            this.sourceLines = sourceText.split('\n');
+            this.sourceYAML = ast.parse(sourceText);
         }
     }
 
@@ -212,15 +207,4 @@ function indentSize(s: string): number {
         return 1 + indentSize(s.substring(1));
     }
     return 0;
-}
-
-function dequote(s: string): string {
-    // TODO: Yes I know about this one too it will go away when I use a proper parser okay
-    if (s.startsWith('"') || s.startsWith("'")) {
-        return dequote(s.substr(1));
-    }
-    if (s.endsWith('"') || s.endsWith("'")) {
-        return dequote(s.substr(0, s.length - 1));
-    }
-    return s;
 }
