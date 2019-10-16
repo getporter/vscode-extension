@@ -76,12 +76,12 @@
                         "properties": {
                             "porter-file": {
                                 "type": "string",
-                                "description": "Absolute path to porter.yaml.",
+                                "description": "Absolute path to porter.yaml",
                                 "default": "${workspaceFolder}/porter.yaml"
                             },
                             "stopOnEntry": {
                                 "type": "boolean",
-                                "description": "Automatically stop after launch.",
+                                "description": "Automatically stop after launch",
                                 "default": true
                             },
                             "installInputs": {
@@ -112,15 +112,16 @@
                 "configurationSnippets": [
                     {
                         "label": "Porter Debug: Install",
-                        "description": "A new configuration for debugging a Porter bundle.",
+                        "description": "A new configuration for debugging a Porter bundle install action",
                         "body": {
                             "type": "porter",
                             "request": "launch",
-                            "name": "Ask for file name",
+                            "name": "Porter Install",
                             "porter-file": "^\"\\${workspaceFolder}/porter.yaml\"",
                             "stopOnEntry": true
                         }
                     }
+
                 ]
             }
         ]
