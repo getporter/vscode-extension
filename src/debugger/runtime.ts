@@ -2,19 +2,25 @@ import { readFileSync } from 'fs';
 import { EventEmitter } from "events";
 
 import * as porter from '../porter/porter';
-import { InstallInputs, VariableInfo, LazyVariableInfo, EVENT_STOP_ON_ENTRY, EVENT_STOP_ON_STEP, EVENT_END } from './session-protocol';
+import { InstallInputs, VariableInfo, LazyVariableInfo, EVENT_STOP_ON_ENTRY, EVENT_STOP_ON_STEP, EVENT_END, PorterBreakpoint, EVENT_BREAKPOINT_VALIDATED, EVENT_STOP_ON_BREAKPOINT } from './session-protocol';
 import { shell } from '../utils/shell';
 import { Errorable } from '../utils/errorable';
 import { CredentialSource, isValue, isEnv, isCommand, isPath } from '../porter/porter.objectmodel';
 import { fs } from '../utils/fs';
 import * as ast from './ast';
 import { flatten } from '../utils/array';
+import { PathMapList } from '../utils/pathmap';
 
 export class PorterInstallRuntime extends EventEmitter {
     private sourceFilePath = '';
     private sourceYAML: ast.PorterManifestYAML | undefined = undefined;
     private actionInputs: InstallInputs | undefined = undefined;
     private readonly actionName = 'install';
+
+    private readonly breakpoints = new PathMapList<PorterBreakpoint>();
+    private breakpointId = 1;
+
+    private action: ast.PorterActionYAML | undefined = undefined;
 
     public get sourceFile() {
         return this.sourceFilePath;
@@ -31,6 +37,8 @@ export class PorterInstallRuntime extends EventEmitter {
 
         this.loadSource(porterFilePath);
         this.currentLine = -1;
+
+        this.verifyBreakpoints(this.sourceFilePath);
 
         this.actionInputs = actionInputs;
 
@@ -62,8 +70,52 @@ export class PorterInstallRuntime extends EventEmitter {
         };
     }
 
-    public getBreakpoints(path: string, line: number): number[] {
-        return [];
+    public setBreakpoint(path: string, line: number): PorterBreakpoint {
+        const bp = { verified: false, line, id: this.breakpointId++ };
+        this.breakpoints.append(path, bp);
+        this.verifyBreakpoints(path);
+        return bp;
+    }
+
+    public clearBreakpoint(path: string, line: number): void {
+        const fileBreakpoints = this.breakpoints.get(path);
+        if (fileBreakpoints) {
+            const index = fileBreakpoints.findIndex((bp) => bp.line === line);
+            if (index >= 0) {
+                fileBreakpoints.splice(index, 1);
+            }
+        }
+    }
+
+    public clearBreakpoints(path: string): void {
+        this.breakpoints.delete(path);
+    }
+
+    private verifyBreakpoints(path: string): void {
+        this.loadSource(path);  // we have to do this because it may not have been done yet (it is efficient because cached)
+        if (!this.action) {
+            return;
+        }
+
+        const bps = this.breakpoints.get(path);
+        if (bps) {
+            bps.forEach((bp) => this.verifyBreakpoint(bp));
+        }
+    }
+
+    private verifyBreakpoint(bp: PorterBreakpoint): void {
+        if (!bp.verified && bp.line < this.sourceLines.length) {
+            const stepsBeforeBP = this.action!.steps.filter((s) => s.startLine <= bp.line);
+            if (stepsBeforeBP.length === 0) {
+                return;
+            }
+            const step = stepsBeforeBP[stepsBeforeBP.length - 1];
+            if (step) {
+                bp.line = step.startLine;
+                bp.verified = true;
+                this.sendEvent(EVENT_BREAKPOINT_VALIDATED, bp);
+            }
+        }
     }
 
     public getParameters(): VariableInfo[] {
@@ -90,16 +142,11 @@ export class PorterInstallRuntime extends EventEmitter {
     }
 
     public async getOutputs(): Promise<LazyVariableInfo[]> {
-        if (!this.sourceYAML) {
+        if (!this.action) {
             return [];
         }
 
-        const action = this.sourceYAML.actions.find((a) => a.name === this.actionName);
-        if (!action) {
-            return [];
-        }
-
-        const stepsBeforeNow = action.steps.filter((s) => s.startLine < this.currentLine);
+        const stepsBeforeNow = this.action.steps.filter((s) => s.startLine < this.currentLine);
         const outputsBeforeNow = flatten(...stepsBeforeNow.map((s) => s.outputs));
 
         return outputsBeforeNow.map((o) => ({
@@ -148,6 +195,7 @@ export class PorterInstallRuntime extends EventEmitter {
             const sourceText = readFileSync(this.sourceFilePath).toString();
             this.sourceLines = sourceText.split('\n');
             this.sourceYAML = ast.parse(sourceText);
+            this.action = this.sourceYAML ? this.sourceYAML.actions.find((a) => a.name === this.actionName) : undefined;
         }
     }
 
@@ -164,6 +212,21 @@ export class PorterInstallRuntime extends EventEmitter {
     }
 
     private fireEventsForLine(ln: number, stepEvent?: string): boolean {
+
+        const fileBreakpoints = this.breakpoints.get(this.sourceFilePath);
+        if (fileBreakpoints) {
+            const lineBreakpoints = fileBreakpoints.filter((bp) => bp.line === ln);
+            if (lineBreakpoints.length > 0) {
+                this.sendEvent(EVENT_STOP_ON_BREAKPOINT);
+
+                if (!lineBreakpoints[0].verified) {
+                    lineBreakpoints[0].verified = true;
+                    this.sendEvent(EVENT_BREAKPOINT_VALIDATED, lineBreakpoints[0]);
+                }
+
+                return true;
+            }
+        }
 
         if (stepEvent && this.isFirstLineOfActionStep(ln)) {
             // TODO: this.sendEvent(EVENT_OUTPUT, whatever_porter_output_from_the_previous_step, this.sourceFile, ln, 0);
@@ -182,15 +245,10 @@ export class PorterInstallRuntime extends EventEmitter {
     }
 
     private isFirstLineOfActionStep(ln: number): boolean {
-        if (!this.sourceYAML) {
+        if (!this.action) {
             return false;
         }
 
-        const action = this.sourceYAML.actions.find((a) => a.name === this.actionName);
-        if (!action) {
-            return false;
-        }
-
-        return action.steps.some((s) => s.startLine === ln);
+        return this.action.steps.some((s) => s.startLine === ln);
     }
 }

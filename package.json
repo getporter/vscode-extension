@@ -57,6 +57,11 @@
                 }
             }
         },
+        "breakpoints": [
+            {
+                "language": "yaml"
+            }
+        ],
         "debuggers": [
             {
                 "type": "porter",

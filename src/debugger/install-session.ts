@@ -2,12 +2,17 @@ import {
     Logger, logger,
     LoggingDebugSession,
     TerminatedEvent, StoppedEvent, OutputEvent,
-    Scope, Source, StackFrame, Thread, Handles
+    Scope, Source, StackFrame, Thread, Handles,
+    Breakpoint, BreakpointEvent, InitializedEvent
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { basename } from 'path';
 import { PorterInstallRuntime } from './runtime';
-import { InstallInputs, VariableInfo, EVENT_STOP_ON_ENTRY, EVENT_STOP_ON_STEP, EVENT_OUTPUT, EVENT_END, LazyVariableInfo } from './session-protocol';
+import {
+    InstallInputs, VariableInfo,
+    EVENT_STOP_ON_ENTRY, EVENT_STOP_ON_STEP, EVENT_OUTPUT, EVENT_END, EVENT_STOP_ON_BREAKPOINT, EVENT_BREAKPOINT_VALIDATED,
+    LazyVariableInfo, PorterBreakpoint
+} from './session-protocol';
 import { Errorable } from '../utils/errorable';
 
 const { Subject } = require('await-notify');
@@ -34,6 +39,12 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 const FAKE_THREAD_ID = 1;
 
+class ProtocolBreakpoint extends Breakpoint implements DebugProtocol.Breakpoint {
+    constructor(verified: boolean, line: number | undefined, readonly id: number) {
+        super(verified, line);
+    }
+}
+
 export class PorterInstallDebugSession extends LoggingDebugSession {
     private readonly runtime: PorterInstallRuntime;
     private readonly configurationDone = new Subject();
@@ -53,6 +64,12 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         this.runtime.on(EVENT_STOP_ON_STEP, () => {
             this.sendEvent(new StoppedEvent('step', FAKE_THREAD_ID));
         });
+        this.runtime.on(EVENT_STOP_ON_BREAKPOINT, () => {
+            this.sendEvent(new StoppedEvent('breakpoint', FAKE_THREAD_ID));
+        });
+		this.runtime.on(EVENT_BREAKPOINT_VALIDATED, (bp: PorterBreakpoint) => {
+			this.sendEvent(new BreakpointEvent('changed', new ProtocolBreakpoint(bp.verified, undefined, bp.id)));
+		});
         this.runtime.on(EVENT_OUTPUT, (text: string, filePath: string, line: number, column: number) => {
             const e: DebugProtocol.OutputEvent = new OutputEvent(`${text}\n`);
             e.body.source = this.createSource(filePath);
@@ -73,6 +90,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
 
         response.body.supportsStepBack = false;
         response.body.supportsDataBreakpoints = false;
+        response.body.supportsBreakpointLocationsRequest = false;
         response.body.supportsCompletionsRequest = true;
         response.body.completionTriggerCharacters = [ ".", EXPRESSION_INITIAL_PREFIX ];
 
@@ -81,6 +99,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         response.body.supportsBreakpointLocationsRequest = false;
 
         this.sendResponse(response);
+        this.sendEvent(new InitializedEvent());
     }
 
     protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
@@ -224,7 +243,7 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
         }
     }
 
-	protected async completionsRequest(response: DebugProtocol.CompletionsResponse, args: DebugProtocol.CompletionsArguments): Promise<void> {
+    protected async completionsRequest(response: DebugProtocol.CompletionsResponse, args: DebugProtocol.CompletionsArguments): Promise<void> {
         const completions = await this.getCompletions(args.text);
         if (completions) {
             response.body = {
@@ -252,6 +271,29 @@ export class PorterInstallDebugSession extends LoggingDebugSession {
 
     protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
         this.runtime.step();
+        this.sendResponse(response);
+    }
+
+    protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
+
+        const path = args.source.path;
+        if (!path) {
+            return;
+        }
+
+        const clientLines = args.lines || [];
+
+        this.runtime.clearBreakpoints(path);
+
+        const actualBreakpoints = clientLines.map((l) => {
+            // TODO: using map for side effects, go to FP jail
+            const { verified, line, id } = this.runtime.setBreakpoint(path, this.convertClientLineToDebugger(l));
+            return new ProtocolBreakpoint(verified, this.convertDebuggerLineToClient(line), id);
+        });
+
+        response.body = {
+            breakpoints: actualBreakpoints
+        };
         this.sendResponse(response);
     }
 
