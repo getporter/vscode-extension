@@ -32,7 +32,7 @@ async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefi
         }
     }
 
-    const folderPath = editor ? path.dirname(editor.document.uri.fsPath) : await findPorterManifestDirectory();
+    const folderPath = folder ? folder.uri.fsPath : await findPorterManifestDirectory();
 
     if (!config['porter-file'] || !folderPath) {
         await vscode.window.showInformationMessage("Cannot find a Porter file to debug");
@@ -78,6 +78,11 @@ async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefi
 }
 
 async function findPorterManifestDirectory(): Promise<string | undefined> {
+    const editor = vscode.window.activeTextEditor;
+    if (editor && editor.document.uri.fsPath.indexOf('porter.yaml') >= 0) {
+        return path.dirname(editor.document.uri.fsPath);
+    }
+
     const folders = vscode.workspace.workspaceFolders;
     if (!folders || folders.length === 0) {
         return undefined;
