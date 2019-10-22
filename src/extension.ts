@@ -10,14 +10,22 @@ import { registerYamlSchema, updateYamlSchema } from './yaml/yaml-schema';
 import { promptForCredentials } from './utils/credentials';
 import { suggestName, folderSelection, displayName, manifest } from './utils/bundleselection';
 import { promptForParameters } from './utils/parameters';
+import { PorterInstallConfigurationProvider } from './debugger/configuration-provider';
+import { PorterInstallDebugAdapterDescriptorFactory } from './debugger/descriptor-factory';
 
 const PORTER_OUTPUT_CHANNEL = vscode.window.createOutputChannel('Porter');
 
 export async function activate(context: vscode.ExtensionContext) {
+    const debugConfigurationProvider = new PorterInstallConfigurationProvider();
+    const debugFactory = new PorterInstallDebugAdapterDescriptorFactory();
+
     const subscriptions = [
         vscode.commands.registerCommand('porter.createProject', createProject),
         vscode.commands.registerCommand('porter.build', build),
         vscode.commands.registerCommand('porter.install', install),
+        vscode.debug.registerDebugConfigurationProvider('porter', debugConfigurationProvider),
+		vscode.debug.registerDebugAdapterDescriptorFactory('porter', debugFactory),
+		debugFactory
     ];
 
     context.subscriptions.push(...subscriptions);
