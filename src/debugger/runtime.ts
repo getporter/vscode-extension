@@ -7,7 +7,7 @@ import { shell } from '../utils/shell';
 import { Errorable } from '../utils/errorable';
 import { CredentialSource, isValue, isEnv, isCommand, isPath } from '../porter/porter.objectmodel';
 import { fs } from '../utils/fs';
-import * as ast from './ast';
+import * as ast from '../porter/ast';
 import { flatten } from '../utils/array';
 import { PathMapList } from '../utils/pathmap';
 

@@ -8,11 +8,13 @@ export interface PorterManifestYAML {
 
 export interface PorterActionYAML {
     readonly name: string;
+    readonly startLine: number;
     readonly steps: ReadonlyArray<PorterStepYAML>;
 }
 
 export interface PorterStepYAML {
     readonly startLine: number;
+    readonly endLine: number;
     readonly outputs: ReadonlyArray<PorterOutputYAML>;
 }
 
@@ -56,7 +58,7 @@ class PorterManifestASTParser {
         const steps = (m.value as yaml.YAMLSequence).items;
         const stepMappings = steps.filter((s) => s.kind === yaml.Kind.MAP).map((s) => s as yaml.YamlMap);
         const steppaz = stepMappings.map((sm) => this.asStepAST(sm));
-        return { name: actionName, steps: definedOf(...steppaz) };
+        return { name: actionName, startLine: this.lineOf(m.startPosition), steps: definedOf(...steppaz) };
     }
 
     private asStepAST(step: yaml.YamlMap): PorterStepYAML | undefined {
@@ -71,7 +73,11 @@ class PorterManifestASTParser {
         const stepDataMappings = (stepData as yaml.YamlMap).mappings;
         const outputSection = stepDataMappings.find((dm) => dm.key.value === 'outputs');
         if (!outputSection) {
-            return { startLine: this.lineOf(step.startPosition), outputs: [] };
+            return {
+                startLine: this.lineOf(step.startPosition),
+                endLine: this.lineOf(step.endPosition),
+                outputs: []
+            };
         }
         if (outputSection.value.kind !== yaml.Kind.SEQ) {
             return undefined;
@@ -79,6 +85,7 @@ class PorterManifestASTParser {
         const outputEntries = (outputSection.value as YAMLSequence).items.filter((o) => o.kind === yaml.Kind.MAP).map((o) => o as yaml.YamlMap);
         return {
             startLine: this.lineOf(step.startPosition),
+            endLine: this.lineOf(step.endPosition),
             outputs: definedOf(...outputEntries.map((o) => this.asOutputAST(o)))
         };
     }
