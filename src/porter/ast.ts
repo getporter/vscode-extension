@@ -1,5 +1,5 @@
 import * as yaml from 'yaml-ast-parser';
-import { YAMLSequence } from 'yaml-ast-parser';
+import { YAMLSequence, YAMLNode } from 'yaml-ast-parser';
 import { definedOf } from '../utils/array';
 
 export interface PorterManifestYAML {
@@ -55,10 +55,15 @@ class PorterManifestASTParser {
 
     private asActionAST(m: yaml.YAMLMapping): PorterActionYAML {
         const actionName = m.key.value;
+        const lineSpan = this.lineSpanOf(m);
         const steps = (m.value as yaml.YAMLSequence).items;
         const stepMappings = steps.filter((s) => s.kind === yaml.Kind.MAP).map((s) => s as yaml.YamlMap);
         const steppaz = stepMappings.map((sm) => this.asStepAST(sm));
-        return { name: actionName, startLine: this.lineOf(m.startPosition), steps: definedOf(...steppaz) };
+        return {
+            name: actionName,
+            startLine: lineSpan.startLine,
+            steps: definedOf(...steppaz)
+        };
     }
 
     private asStepAST(step: yaml.YamlMap): PorterStepYAML | undefined {
@@ -70,13 +75,13 @@ class PorterManifestASTParser {
         if (stepData.kind !== yaml.Kind.MAP) {
             return undefined;
         }
+        const stepLineSpan = this.lineSpanOf(step);
         const stepDataMappings = (stepData as yaml.YamlMap).mappings;
         const outputSection = stepDataMappings.find((dm) => dm.key.value === 'outputs');
         if (!outputSection) {
             return {
-                startLine: this.lineOf(step.startPosition),
-                endLine: this.lineOf(step.endPosition),
-                outputs: []
+                outputs: [],
+                ...stepLineSpan
             };
         }
         if (outputSection.value.kind !== yaml.Kind.SEQ) {
@@ -84,9 +89,8 @@ class PorterManifestASTParser {
         }
         const outputEntries = (outputSection.value as YAMLSequence).items.filter((o) => o.kind === yaml.Kind.MAP).map((o) => o as yaml.YamlMap);
         return {
-            startLine: this.lineOf(step.startPosition),
-            endLine: this.lineOf(step.endPosition),
-            outputs: definedOf(...outputEntries.map((o) => this.asOutputAST(o)))
+            outputs: definedOf(...outputEntries.map((o) => this.asOutputAST(o))),
+            ...stepLineSpan
         };
     }
 
@@ -105,6 +109,23 @@ class PorterManifestASTParser {
             }
         }
         return this.lineStartPositions.length;
+    }
+
+    private lineSpanOf(node: YAMLNode) {
+        const [start, end] = this.trimmedRangeOf(node);
+        return {
+            startLine: this.lineOf(start),
+            endLine: this.lineOf(end)
+        };
+    }
+
+    private trimmedRangeOf(node: YAMLNode): [number, number] {
+        const start = node.startPosition;  // TODO: can we assume there is no leading whitespace?
+        const end = node.endPosition;
+        const nodeText = this.yamlText.substring(start, end);
+        const wsStart = nodeText.length - nodeText.trimLeft().length;
+        const wsEnd = nodeText.length - nodeText.trimRight().length;
+        return [start + wsStart, end - wsEnd];
     }
 }
 
