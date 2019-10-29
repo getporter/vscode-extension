@@ -21,6 +21,8 @@
         "onCommand:porter.build",
         "onCommand:porter.install",
         "onCommand:porter.insertHelmChart",
+        "onCommand:porter.moveStepUp",
+        "onCommand:porter.moveStepDown",
         "onView:extension.vsKubernetesHelmRepoExplorer",
         "onDebugResolve:porter",
         "onLanguage:yaml"
@@ -47,6 +49,16 @@
                 "command": "porter.insertHelmChart",
                 "title": "Insert Chart into Porter Bundle",
                 "category": "Porter"
+            },
+            {
+                "command": "porter.moveStepUp",
+                "title": "Move Step Up",
+                "category": "Porter"
+            },
+            {
+                "command": "porter.moveStepDown",
+                "title": "Move Step Down",
+                "category": "Porter"
             }
         ],
         "menus": {
@@ -55,6 +67,18 @@
                     "command": "porter.insertHelmChart",
                     "group": "9",
                     "when": "view == extension.vsKubernetesHelmRepoExplorer && viewItem =~ /vsKubernetes\\.((chart)|(chartversion))/i"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "porter.moveStepUp",
+                    "group": "9@1",
+                    "when": "resourceFilename =~ /porter\\.yaml/i"
+                },
+                {
+                    "command": "porter.moveStepDown",
+                    "group": "9@2",
+                    "when": "resourceFilename =~ /porter\\.yaml/i"
                 }
             ]
         },
