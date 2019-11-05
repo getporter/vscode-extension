@@ -48,7 +48,7 @@ export async function parameteriseSelection(): Promise<void> {
 function makeParameterisationEdits(porterManifest: vscode.TextDocument, manifest: ast.PorterManifestYAML, sourceText: string): vscode.WorkspaceEdit {
     const edit = new vscode.WorkspaceEdit();
 
-    const name = 'TO BE WORKED OUT';
+    const name = safeName(sourceText);
 
     const parameterDefinitionText = `  - name: ${name}\n    default: ${sourceText}\n    description: TO BE WORKED OUT\n`;
     if (manifest.parameters) {
@@ -71,4 +71,23 @@ function endPosition(document: vscode.TextDocument): vscode.Position {
     const lastLineIndex = document.lineCount - 1;
     const lastLine = document.lineAt(lastLineIndex);
     return lastLine.range.end;
+}
+
+function safeName(s: string): string {
+    const words = s.replace(/[^a-zA-Z0-9]/g, ' ').trim().split(' ');
+    const camelised = camelise(words);
+    return camelised;
+}
+
+function camelise(words: readonly string[]): string {
+    if (!words || words.length === 0) {
+        return 'parameter';
+    }
+    const lowercased = words.filter((w) => w.length > 0).map((w) => w.toLowerCase());
+    const titlecased = lowercased.map((w) => titlecase(w));
+    return lowercased[0] + titlecased.slice(1).join('');
+}
+
+function titlecase(s: string): string {
+    return s[0].toUpperCase() + s.substring(1);
 }
