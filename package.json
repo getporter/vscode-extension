@@ -20,6 +20,8 @@
         "onCommand:porter.createProject",
         "onCommand:porter.build",
         "onCommand:porter.install",
+        "onCommand:porter.insertHelmChart",
+        "onView:extension.vsKubernetesHelmRepoExplorer",
         "onDebugResolve:porter",
         "onLanguage:yaml"
     ],
@@ -40,8 +42,22 @@
                 "command": "porter.install",
                 "title": "Install",
                 "category": "Porter"
+            },
+            {
+                "command": "porter.insertHelmChart",
+                "title": "Insert Chart into Porter Bundle",
+                "category": "Porter"
             }
         ],
+        "menus": {
+            "view/item/context": [
+                {
+                    "command": "porter.insertHelmChart",
+                    "group": "9",
+                    "when": "view == extension.vsKubernetesHelmRepoExplorer && viewItem =~ /vsKubernetes\\.((chart)|(chartversion))/i"
+                }
+            ]
+        },
         "configuration": {
             "title": "Porter",
             "properties": {
