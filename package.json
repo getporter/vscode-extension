@@ -23,6 +23,7 @@
         "onCommand:porter.insertHelmChart",
         "onCommand:porter.moveStepUp",
         "onCommand:porter.moveStepDown",
+        "onCommand:porter.parameterise",
         "onView:extension.vsKubernetesHelmRepoExplorer",
         "onDebugResolve:porter",
         "onLanguage:yaml"
@@ -58,6 +59,11 @@
             {
                 "command": "porter.moveStepDown",
                 "title": "Move Step Down",
+                "category": "Porter"
+            },
+            {
+                "command": "porter.parameterise",
+                "title": "Extract Selection to Parameter",
                 "category": "Porter"
             }
         ],

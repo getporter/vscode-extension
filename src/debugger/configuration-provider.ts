@@ -1,4 +1,3 @@
-import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { InstallInputs } from './session-protocol';
@@ -9,7 +8,7 @@ import { failed } from '../utils/errorable';
 import { promptForCredentials } from '../utils/credentials';
 import * as shell from '../utils/shell';
 import { promptForParameters } from '../utils/parameters';
-import { fs } from '../utils/fs';
+import { findPorterManifestDirectory } from '../utils/manifestselection';
 
 export class PorterInstallConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -75,27 +74,6 @@ async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefi
     config.stopOnEntry = true;
 
     return config;
-}
-
-async function findPorterManifestDirectory(): Promise<string | undefined> {
-    const editor = vscode.window.activeTextEditor;
-    if (editor && editor.document.uri.fsPath.indexOf('porter.yaml') >= 0) {
-        return path.dirname(editor.document.uri.fsPath);
-    }
-
-    const folders = vscode.workspace.workspaceFolders;
-    if (!folders || folders.length === 0) {
-        return undefined;
-    }
-
-    for (const f of folders) {
-        const folderDir = f.uri.fsPath;
-        if (await fs.exists(path.join(folderDir, 'porter.yaml'))) {
-            return folderDir;
-        }
-    }
-
-    return undefined;
 }
 
 function debugSuffix(): string {

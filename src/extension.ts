@@ -14,6 +14,7 @@ import { PorterInstallConfigurationProvider } from './debugger/configuration-pro
 import { PorterInstallDebugAdapterDescriptorFactory } from './debugger/descriptor-factory';
 import { insertHelmChart } from './commands/inserthelmchart';
 import { moveStepUp, moveStepDown } from './commands/movestep';
+import { parameteriseSelection } from './commands/parameterise';
 
 const PORTER_OUTPUT_CHANNEL = vscode.window.createOutputChannel('Porter');
 
@@ -28,6 +29,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('porter.insertHelmChart', insertHelmChart),
         vscode.commands.registerTextEditorCommand('porter.moveStepUp', moveStepUp),
         vscode.commands.registerTextEditorCommand('porter.moveStepDown', moveStepDown),
+        vscode.commands.registerCommand('porter.parameterise', parameteriseSelection),
         vscode.debug.registerDebugConfigurationProvider('porter', debugConfigurationProvider),
 		vscode.debug.registerDebugAdapterDescriptorFactory('porter', debugFactory),
 		debugFactory

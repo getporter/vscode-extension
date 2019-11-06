@@ -3,7 +3,12 @@ import { YAMLSequence, YAMLNode } from 'yaml-ast-parser';
 import { definedOf } from '../utils/array';
 
 export interface PorterManifestYAML {
+    readonly parameters?: PorterParametersYAML;
     readonly actions: ReadonlyArray<PorterActionYAML>;
+}
+
+export interface PorterParametersYAML {
+    readonly startLine: number;
 }
 
 export interface PorterActionYAML {
@@ -46,10 +51,21 @@ class PorterManifestASTParser {
         }
 
         const mappings = (ast as yaml.YamlMap).mappings;
+        const parametersMapping = mappings.find((m) => m.key && m.key.value === 'parameters');
         const actionMappings = mappings.filter((m) => m.key && m.value && m.value.kind === yaml.Kind.SEQ && nonStepArrays.indexOf(m.key.value) < 0);  // TODO: better heuristics?
 
         return {
+            parameters: this.asParametersAST(parametersMapping),
             actions: actionMappings.map((m) => this.asActionAST(m))
+        };
+    }
+
+    private asParametersAST(m: yaml.YAMLMapping | undefined): PorterParametersYAML | undefined {
+        if (!m) {
+            return undefined;
+        }
+        return {
+            startLine: this.lineOf(m.startPosition)
         };
     }
 
