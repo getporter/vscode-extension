@@ -15,10 +15,12 @@ import { PorterInstallDebugAdapterDescriptorFactory } from './debugger/descripto
 import { insertHelmChart } from './commands/inserthelmchart';
 import { moveStepUp, moveStepDown } from './commands/movestep';
 import { parameteriseSelection } from './commands/parameterise';
+import * as definitionprovider from './navigation/definitionprovider';
 
 const PORTER_OUTPUT_CHANNEL = vscode.window.createOutputChannel('Porter');
 
 export async function activate(context: vscode.ExtensionContext) {
+    const definitionProvider = definitionprovider.create();
     const debugConfigurationProvider = new PorterInstallConfigurationProvider();
     const debugFactory = new PorterInstallDebugAdapterDescriptorFactory();
 
@@ -30,6 +32,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerTextEditorCommand('porter.moveStepUp', moveStepUp),
         vscode.commands.registerTextEditorCommand('porter.moveStepDown', moveStepDown),
         vscode.commands.registerCommand('porter.parameterise', parameteriseSelection),
+        vscode.languages.registerDefinitionProvider({ language: 'yaml', pattern: '**/porter.yaml' }, definitionProvider),
         vscode.debug.registerDebugConfigurationProvider('porter', debugConfigurationProvider),
 		vscode.debug.registerDebugAdapterDescriptorFactory('porter', debugFactory),
 		debugFactory
