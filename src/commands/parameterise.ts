@@ -56,7 +56,7 @@ function makeParameterisationEdits(sourceDocument: vscode.TextDocument, porterMa
 
     const name = safeName(sourceText);
 
-    const parameterDefinitionText = `  - name: ${name}\n    default: ${sourceText}\n    description: TO BE WORKED OUT\n`;
+    const parameterDefinitionText = `  - name: ${name}\n    default: ${sourceText}\n    description: Replaces '${sourceText}' in original\n`;
     if (manifest.parameters) {
         // insert the text after the section (or, for now, as the top line of the section)
         const position = new vscode.Position(manifest.parameters.startLine + 1, 0);
