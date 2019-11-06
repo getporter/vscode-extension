@@ -69,7 +69,8 @@ function makeParameterisationEdits(sourceDocument: vscode.TextDocument, porterMa
     }
 
     if (sourceDocument === porterManifest) {
-        edit.replace(sourceDocument.uri, sourceRange, parameterReference(name));
+        const willReplaceEntireValue = isEntireValue(sourceDocument, sourceRange);  // e.g. foo: {{ bundle.parameters.bar }} would be invalid - has to be foo: "{{ bundle.parameters.bar }}"
+        edit.replace(sourceDocument.uri, sourceRange, parameterReference(name, willReplaceEntireValue));
     }
 
     return edit;
@@ -100,6 +101,19 @@ function titlecase(s: string): string {
     return s[0].toUpperCase() + s.substring(1);
 }
 
-function parameterReference(name: string): string {
-    return `{{ bundle.parameters.${name} }}`;
+function parameterReference(name: string, isReferenceEntireYAMLValue: boolean): string {
+    const reference = `{{ bundle.parameters.${name} }}`;
+    if (isReferenceEntireYAMLValue) {
+        return `"${reference}"`;
+    }
+    return reference;
+}
+
+function isEntireValue(document: vscode.TextDocument, range: vscode.Range): boolean {
+    const line = document.lineAt(range.start.line).text;
+    const lineBefore = line.substr(0, range.start.character).trim();
+    // This is pretty rough and heuristic.  We could bring out the full YAML parser
+    // to get a better indicator, but it's probably not worth it given that the user
+    // can easily edit problems away if we get it wrong.
+    return (lineBefore.endsWith(':') || lineBefore.endsWith('-'));
 }
