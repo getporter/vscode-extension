@@ -11,7 +11,15 @@ export async function parameteriseSelection(): Promise<void> {
     }
 
     const selection = editor.selection;
-    if (selection.start.isEqual(selection.end)) {
+    if (selection.isEmpty) {
+        await vscode.window.showErrorMessage('This command requires you to select some text first');
+        return;
+    }
+
+    const selectionRange = new vscode.Range(selection.start, selection.end);
+
+    const sourceText = editor.document.getText(selection);
+    if (sourceText.trim().length === 0) {
         await vscode.window.showErrorMessage('This command requires you to select some text first');
         return;
     }
@@ -30,9 +38,7 @@ export async function parameteriseSelection(): Promise<void> {
         return;
     }
 
-    const text = editor.document.getText(selection);
-
-    const wsedit = makeParameterisationEdits(porterManifestDocument, manifest, text);
+    const wsedit = makeParameterisationEdits(activeDocument, porterManifestDocument, manifest, selectionRange, sourceText);
 
     const edited = await vscode.workspace.applyEdit(wsedit);
     if (!edited) {
@@ -45,7 +51,7 @@ export async function parameteriseSelection(): Promise<void> {
     // source document if we make them)
 }
 
-function makeParameterisationEdits(porterManifest: vscode.TextDocument, manifest: ast.PorterManifestYAML, sourceText: string): vscode.WorkspaceEdit {
+function makeParameterisationEdits(sourceDocument: vscode.TextDocument, porterManifest: vscode.TextDocument, manifest: ast.PorterManifestYAML, sourceRange: vscode.Range, sourceText: string): vscode.WorkspaceEdit {
     const edit = new vscode.WorkspaceEdit();
 
     const name = safeName(sourceText);
@@ -62,7 +68,9 @@ function makeParameterisationEdits(porterManifest: vscode.TextDocument, manifest
         edit.insert(porterManifest.uri, position, parametersSectionText);
     }
 
-    // TODO: if the active document is porter.yaml, replace the selected text with {{ bundle.paraneters.${name} }}
+    if (sourceDocument === porterManifest) {
+        edit.replace(sourceDocument.uri, sourceRange, parameterReference(name));
+    }
 
     return edit;
 }
@@ -90,4 +98,8 @@ function camelise(words: readonly string[]): string {
 
 function titlecase(s: string): string {
     return s[0].toUpperCase() + s.substring(1);
+}
+
+function parameterReference(name: string): string {
+    return `{{ bundle.parameters.${name} }}`;
 }
