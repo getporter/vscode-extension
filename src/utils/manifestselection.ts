@@ -41,6 +41,6 @@ async function porterFolders(): Promise<readonly string[]> {
         return [];
     }
 
-    const matches = await folders.filterAsync<vscode.WorkspaceFolder>(async (f) => await fs.exists(path.join(f.uri.fsPath, 'porter.yaml')));
+    const matches = await folders.filterAsync(async (f) => await fs.exists(path.join(f.uri.fsPath, 'porter.yaml')));
     return matches.map((f) => f.uri.fsPath);
 }

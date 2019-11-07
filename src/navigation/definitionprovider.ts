@@ -81,24 +81,31 @@ function asReferenceKind(text: string): 'parameter' | 'credential' | 'output' | 
 
 function locationIn(manifest: ast.PorterManifestYAML, reference: Reference, referencePosition: vscode.Position): vscode.Range | undefined {
     if (reference.kind === 'output') {
-        const step = stepContaining(manifest, referencePosition);
-        if (!step) {
+        const action = actionContaining(manifest, referencePosition);
+        if (!action) {
             return undefined;
         }
-        const definition = step.outputs.find((s) => s.name === reference.name);
-        if (!definition) {
+        const definitions = action.steps.map((s) => s.outputs).choose((os) => os.find((o) => o.name === reference.name));
+        if (!definitions || definitions.length === 0) {
             return undefined;
         }
-        return new vscode.Range();
+        const definition = definitions[0];
+        return definition.nameRange;
     }
 
     const definitions = reference.kind === 'parameter' ? manifest.parameters : manifest.credentials;
     if (!definitions) {
         return undefined;
     }
-    return find_the_name_in_the_section;
+
+    const definition = definitions.entries.find((e) => e.name === reference.name);
+    if (!definition) {
+        return undefined;
+    }
+
+    return definition.nameRange;
 }
 
-function stepContaining(manifest: ast.PorterManifestYAML, position: vscode.Position): ast.PorterStepYAML | undefined {
-
+function actionContaining(manifest: ast.PorterManifestYAML, position: vscode.Position): ast.PorterActionYAML | undefined {
+    return manifest.actions.find((a) => a.startLine <= position.line && position.line <= a.endLine);
 }
