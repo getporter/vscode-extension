@@ -122,7 +122,7 @@ function syntheticAction(editor: vscode.TextEditor, actionName: string): ast.Por
     // if the action has no steps then it may not be parsed as an action
     const unparsedActionLine = findLine(editor.document, `${actionName}:`);
     if (unparsedActionLine !== undefined) {
-        return { name: actionName, startLine: unparsedActionLine, steps: [] };
+        return { name: actionName, startLine: unparsedActionLine, endLine: unparsedActionLine, steps: [] };
     }
     return undefined;
 }

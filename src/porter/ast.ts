@@ -1,30 +1,36 @@
 import * as yaml from 'yaml-ast-parser';
 import { YAMLSequence, YAMLNode } from 'yaml-ast-parser';
+import '../utils/array';
 import { definedOf } from '../utils/array';
+import { Range, Position } from 'vscode';
 
 export interface PorterManifestYAML {
-    readonly parameters?: PorterParametersYAML;
+    readonly parameters: PorterDefinitionsYAML | undefined;
+    readonly credentials: PorterDefinitionsYAML | undefined;
     readonly actions: ReadonlyArray<PorterActionYAML>;
 }
 
-export interface PorterParametersYAML {
+export interface PorterDefinitionsYAML {
     readonly startLine: number;
+    readonly entries: ReadonlyArray<PorterDefinitionYAML>;
+}
+
+export interface PorterDefinitionYAML {
+    readonly name: string;
+    readonly nameRange: Range;
 }
 
 export interface PorterActionYAML {
     readonly name: string;
     readonly startLine: number;
+    readonly endLine: number;
     readonly steps: ReadonlyArray<PorterStepYAML>;
 }
 
 export interface PorterStepYAML {
     readonly startLine: number;
     readonly endLine: number;
-    readonly outputs: ReadonlyArray<PorterOutputYAML>;
-}
-
-export interface PorterOutputYAML {
-    readonly name: string;
+    readonly outputs: ReadonlyArray<PorterDefinitionYAML>;
 }
 
 const nonStepArrays = ['mixins', 'parameters', 'credentials'];
@@ -52,21 +58,35 @@ class PorterManifestASTParser {
 
         const mappings = (ast as yaml.YamlMap).mappings;
         const parametersMapping = mappings.find((m) => m.key && m.key.value === 'parameters');
+        const credentialsMapping = mappings.find((m) => m.key && m.key.value === 'credentials');
         const actionMappings = mappings.filter((m) => m.key && m.value && m.value.kind === yaml.Kind.SEQ && nonStepArrays.indexOf(m.key.value) < 0);  // TODO: better heuristics?
 
         return {
-            parameters: this.asParametersAST(parametersMapping),
+            parameters: this.asDefinitionsAST(parametersMapping),
+            credentials: this.asDefinitionsAST(credentialsMapping),
             actions: actionMappings.map((m) => this.asActionAST(m))
         };
     }
 
-    private asParametersAST(m: yaml.YAMLMapping | undefined): PorterParametersYAML | undefined {
+    private asDefinitionsAST(m: yaml.YAMLMapping | undefined): PorterDefinitionsYAML | undefined {
         if (!m) {
             return undefined;
         }
         return {
-            startLine: this.lineOf(m.startPosition)
+            startLine: this.lineOf(m.startPosition),
+            entries: this.asDefinitionASTs(m.value)
         };
+    }
+
+    private asDefinitionASTs(value: yaml.YAMLNode): readonly PorterDefinitionYAML[] {
+        if (value.kind !== yaml.Kind.SEQ) {
+            return [];
+        }
+        const node = value as yaml.YAMLSequence;
+        const definitionNodes = node.items;
+        const definitionCandidates = definitionNodes.filter((n) => n.kind === yaml.Kind.MAP)
+                                                    .map((n) => n as yaml.YamlMap);
+        return definitionCandidates.choose((m) => this.asDefinitionAST(m));
     }
 
     private asActionAST(m: yaml.YAMLMapping): PorterActionYAML {
@@ -78,6 +98,7 @@ class PorterManifestASTParser {
         return {
             name: actionName,
             startLine: lineSpan.startLine,
+            endLine: lineSpan.endLine,
             steps: definedOf(...steppaz)
         };
     }
@@ -105,17 +126,17 @@ class PorterManifestASTParser {
         }
         const outputEntries = (outputSection.value as YAMLSequence).items.filter((o) => o.kind === yaml.Kind.MAP).map((o) => o as yaml.YamlMap);
         return {
-            outputs: definedOf(...outputEntries.map((o) => this.asOutputAST(o))),
+            outputs: definedOf(...outputEntries.map((o) => this.asDefinitionAST(o))),
             ...stepLineSpan
         };
     }
 
-    private asOutputAST(o: yaml.YamlMap): PorterOutputYAML | undefined {
+    private asDefinitionAST(o: yaml.YamlMap): PorterDefinitionYAML | undefined {
         const nameMapping = o.mappings.find((m) => m.key.value === 'name');
         if (!nameMapping) {
             return undefined;
         }
-        return { name: nameMapping.value.value };
+        return { name: nameMapping.value.value, nameRange: this.rangeOf(nameMapping) };
     }
 
     private lineOf(position: number): number {
@@ -133,6 +154,20 @@ class PorterManifestASTParser {
             startLine: this.lineOf(start),
             endLine: this.lineOf(end)
         };
+    }
+
+    private rangeOf(node: YAMLNode): Range {
+        const [start, end] = this.trimmedRangeOf(node);
+        return new Range(
+            this.positionOf(start),
+            this.positionOf(end)
+        );
+    }
+
+    private positionOf(position: number): Position {
+        const lineIndex = this.lineOf(position);
+        const lineStart = this.lineStartPositions[lineIndex];
+        return new Position(lineIndex, position - lineStart);
     }
 
     private trimmedRangeOf(node: YAMLNode): [number, number] {
