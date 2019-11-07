@@ -40,8 +40,8 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
         vscode.debug.registerDebugConfigurationProvider('porter', debugConfigurationProvider),
-		vscode.debug.registerDebugAdapterDescriptorFactory('porter', debugFactory),
-		debugFactory
+        vscode.debug.registerDebugAdapterDescriptorFactory('porter', debugFactory),
+        debugFactory
     ];
 
     context.subscriptions.push(...subscriptions);
