@@ -17,6 +17,7 @@ import { moveStepUp, moveStepDown } from './commands/movestep';
 import { parameteriseSelection } from './commands/parameterise';
 import * as definitionprovider from './navigation/definitionprovider';
 import * as referenceprovider from './navigation/referenceprovider';
+import * as diagnostics from './diagnostics/diagnostics';
 
 const PORTER_OUTPUT_CHANNEL = vscode.window.createOutputChannel('Porter');
 
@@ -45,6 +46,8 @@ export async function activate(context: vscode.ExtensionContext) {
     ];
 
     context.subscriptions.push(...subscriptions);
+
+    diagnostics.initialise();
 
     await registerYamlSchema(context);
     updateYamlSchema(context);  // runs in background - do not wait for this to finish activation
