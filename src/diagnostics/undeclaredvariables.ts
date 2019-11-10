@@ -17,16 +17,6 @@ function* lint(document: vscode.TextDocument, manifest: ast.PorterManifestYAML):
             yield new vscode.Diagnostic(reference.textRange, error, vscode.DiagnosticSeverity.Error);
         }
     }
-    // for (let lineIndex = 0; lineIndex < document.lineCount; ++lineIndex) {
-    //     const line = document.lineAt(lineIndex).text;
-    //     for (const reference of references(line)) {
-    //         const error = usageError(reference, lineIndex, usable);
-    //         if (error) {
-    //             const range = new vscode.Range(lineIndex, reference.startIndex, lineIndex, reference.endIndex);
-    //             yield new vscode.Diagnostic(range, error, vscode.DiagnosticSeverity.Error);
-    //         }
-    //     }
-    // }
 }
 
 function references(manifest: ast.PorterManifestYAML): ast.PorterTemplateYAML[] {
@@ -36,38 +26,6 @@ function references(manifest: ast.PorterManifestYAML): ast.PorterTemplateYAML[] 
 function isReference(template: ast.PorterTemplateYAML) {
     return template.text.startsWith('bundle.');
 }
-
-// function* references(text: string): IterableIterator<Reference> {
-//     // TODO: check if commented out
-
-//     let searchedTo = 0;
-//     while (true) {
-//         const openingBraceIndex = text.indexOf('{{', searchedTo);
-
-//         if (openingBraceIndex < 0) {
-//             return;
-//         }
-
-//         const closingBraceIndex = text.indexOf('}}', openingBraceIndex);
-
-//         if (closingBraceIndex < 0) {
-//             return;
-//         }
-
-//         const candidateText = text.substring(openingBraceIndex + 2, closingBraceIndex).trim();
-//         const textStartIndex = text.indexOf(candidateText, openingBraceIndex);
-
-//         if (candidateText.startsWith('bundle.')) {
-//             yield {
-//                 startIndex: textStartIndex,
-//                 endIndex: textStartIndex + candidateText.length,
-//                 text: candidateText
-//             };
-//         }
-
-//         searchedTo = closingBraceIndex;
-//     }
-// }
 
 function usageError(text: string, lineIndex: number, usable: UsableVariable[]): string | undefined {
     const definitions = usable.filter((v) => v.text === text);
