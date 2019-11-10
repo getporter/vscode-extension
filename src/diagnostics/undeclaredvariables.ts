@@ -1,11 +1,23 @@
 import * as vscode from 'vscode';
+import levenshtein = require('js-levenshtein');
+
 import { Linter } from './linter';
 import * as ast from '../porter/ast';
+import { flatten } from '../utils/array';
+
+const MAX_TOLERANCE = 10;
+const MAX_OFFERED_FIXES = 5;
 
 class UndeclaredVariablesLinter implements Linter {
     async lint(document: vscode.TextDocument, manifest: ast.PorterManifestYAML): Promise<vscode.Diagnostic[]> {
         const diagnostics = lint(document, manifest);
         return Array.of(...diagnostics);
+    }
+
+    fixes(document: vscode.TextDocument, manifest: ast.PorterManifestYAML, diagnostics: vscode.Diagnostic[]): vscode.CodeAction[] {
+        const fixables = diagnostics.filter((d) => d.code === DIAGNOSTIC_NO_DEFINITION);
+        const actions = fixables.map((f) => fixes(f, document, manifest));
+        return flatten(...actions);
     }
 }
 
@@ -30,8 +42,8 @@ function isReference(template: ast.PorterTemplateYAML) {
     return template.text.startsWith('bundle.');
 }
 
-export const DIAGNOSTIC_NO_DEFINITION = 'porter_no_definition';
-export const DIAGNOSTIC_DEFINITION_NOT_AVAILABLE = 'porter_definition_not_available';
+const DIAGNOSTIC_NO_DEFINITION = 'porter_no_definition';
+const DIAGNOSTIC_DEFINITION_NOT_AVAILABLE = 'porter_definition_not_available';
 
 function usageError(text: string, lineIndex: number, usable: UsableVariable[]): [string, string] | undefined {
     const definitions = usable.filter((v) => v.text === text);
@@ -53,6 +65,10 @@ function usableAt(lineIndex: number, variable: UsableVariable): boolean {
         return variable.usableFromLine <= lineIndex && lineIndex <= variable.usableToLine;
     }
     return true;
+}
+
+function usableVariablesAt(manifest: ast.PorterManifestYAML, lineIndex: number): readonly UsableVariable[] {
+    return Array.of(...usableVariables(manifest)).filter((v) => usableAt(lineIndex, v));
 }
 
 interface UsableVariable {
@@ -81,6 +97,34 @@ function* usableVariables(manifest: ast.PorterManifestYAML): IterableIterator<Us
             }
         }
     }
+}
+
+function fixes(diagnostic: vscode.Diagnostic, document: vscode.TextDocument, manifest: ast.PorterManifestYAML): readonly vscode.CodeAction[] {
+    return proposeDeclarations(diagnostic, document, manifest, diagnostic.range.start);
+}
+
+function proposeDeclarations(diagnostic: vscode.Diagnostic, document: vscode.TextDocument, manifest: ast.PorterManifestYAML, position: vscode.Position): readonly vscode.CodeAction[] {
+    const faultyText = document.getText(diagnostic.range);
+
+    const candidates = usableVariablesAt(manifest, position.line)
+                           .map((v) => ({ decl: v, score: levenshtein(v.text, faultyText) }))
+                           .sort((v1, v2) => v1.score - v2.score);
+
+    return candidates.filter((c) => c.score <= MAX_TOLERANCE)
+                     .slice(0, MAX_OFFERED_FIXES)
+                     .map((c) => substituteDeclarationAction(document, diagnostic.range, c.decl.text));
+}
+
+function substituteDeclarationAction(document: vscode.TextDocument, range: vscode.Range, proposed: string): vscode.CodeAction {
+    const action = new vscode.CodeAction(`Change to ${proposed}`, vscode.CodeActionKind.QuickFix);
+    action.edit = substituteDeclarationEdit(document, range, proposed);
+    return action;
+}
+
+function substituteDeclarationEdit(document: vscode.TextDocument, range: vscode.Range, proposed: string): vscode.WorkspaceEdit {
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(document.uri, range, proposed);
+    return edit;
 }
 
 export const UNDECLARED_VARIABLES_LINTER = new UndeclaredVariablesLinter();

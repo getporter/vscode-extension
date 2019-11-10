@@ -4,7 +4,7 @@ import * as ast from '../porter/ast';
 import { Linter } from './linter';
 import { UNDECLARED_VARIABLES_LINTER } from './undeclaredvariables';
 
-const linters: readonly Linter[] = [
+export const linters: readonly Linter[] = [
     UNDECLARED_VARIABLES_LINTER,
 ];
 

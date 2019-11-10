@@ -1,4 +1,4 @@
-export function flatten<T>(...arrays: ReadonlyArray<T>[]): ReadonlyArray<T> {
+export function flatten<T>(...arrays: ReadonlyArray<T>[]): T[] {
     return Array.of<T>().concat(...arrays);
 }
 
