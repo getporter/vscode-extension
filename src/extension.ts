@@ -18,12 +18,14 @@ import { parameteriseSelection } from './commands/parameterise';
 import * as definitionprovider from './navigation/definitionprovider';
 import * as referenceprovider from './navigation/referenceprovider';
 import * as diagnostics from './diagnostics/diagnostics';
+import * as codeactionprovider from './diagnostics/codeactionprovider';
 
 const PORTER_OUTPUT_CHANNEL = vscode.window.createOutputChannel('Porter');
 
 export async function activate(context: vscode.ExtensionContext) {
     const definitionProvider = definitionprovider.create();
     const referenceProvider = referenceprovider.create();
+    const codeActionProvider = codeactionprovider.create();
 
     const debugConfigurationProvider = new PorterInstallConfigurationProvider();
     const debugFactory = new PorterInstallDebugAdapterDescriptorFactory();
@@ -40,6 +42,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('porter.parameterise', parameteriseSelection),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
+        vscode.languages.registerCodeActionsProvider(porterManifestSelector, codeActionProvider, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
         vscode.debug.registerDebugConfigurationProvider('porter', debugConfigurationProvider),
         vscode.debug.registerDebugAdapterDescriptorFactory('porter', debugFactory),
         debugFactory

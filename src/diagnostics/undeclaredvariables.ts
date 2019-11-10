@@ -12,9 +12,12 @@ class UndeclaredVariablesLinter implements Linter {
 function* lint(document: vscode.TextDocument, manifest: ast.PorterManifestYAML): IterableIterator<vscode.Diagnostic> {
     const usable = Array.of(...usableVariables(manifest));
     for (const reference of references(manifest)) {
-        const error = usageError(reference.text, reference.textRange.start.line, usable);
-        if (error) {
-            yield new vscode.Diagnostic(reference.textRange, error, vscode.DiagnosticSeverity.Error);
+        const errorInfo = usageError(reference.text, reference.textRange.start.line, usable);
+        if (errorInfo) {
+            const [error, code] = errorInfo;
+            const diagnostic = new vscode.Diagnostic(reference.textRange, error, vscode.DiagnosticSeverity.Error);
+            diagnostic.code = code;
+            yield diagnostic;
         }
     }
 }
@@ -27,13 +30,16 @@ function isReference(template: ast.PorterTemplateYAML) {
     return template.text.startsWith('bundle.');
 }
 
-function usageError(text: string, lineIndex: number, usable: UsableVariable[]): string | undefined {
+export const DIAGNOSTIC_NO_DEFINITION = 'porter_no_definition';
+export const DIAGNOSTIC_DEFINITION_NOT_AVAILABLE = 'porter_definition_not_available';
+
+function usageError(text: string, lineIndex: number, usable: UsableVariable[]): [string, string] | undefined {
     const definitions = usable.filter((v) => v.text === text);
     if (definitions.length === 0) {
-        return `Cannot find definition for ${text}`;
+        return [`Cannot find definition for ${text}`, DIAGNOSTIC_NO_DEFINITION];
     }
     if (!anyUsableAt(lineIndex, definitions)) {
-        return `Cannot use ${text} here - check where it is defined`;
+        return [`Cannot use ${text} here - check where it is defined`, DIAGNOSTIC_DEFINITION_NOT_AVAILABLE];
     }
     return undefined;
 }
