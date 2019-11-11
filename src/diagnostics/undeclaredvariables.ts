@@ -4,6 +4,7 @@ import levenshtein = require('js-levenshtein');
 import { Linter } from './linter';
 import * as ast from '../porter/ast';
 import { flatten } from '../utils/array';
+import { usableVariables, anyUsableAt, UsableVariable, usableVariablesAt } from '../porter/semanticmodel';
 
 const MAX_TOLERANCE = 10;
 const MAX_OFFERED_FIXES = 5;
@@ -54,49 +55,6 @@ function usageError(text: string, lineIndex: number, usable: UsableVariable[]): 
         return [`Cannot use ${text} here - check where it is defined`, DIAGNOSTIC_DEFINITION_NOT_AVAILABLE];
     }
     return undefined;
-}
-
-function anyUsableAt(lineIndex: number, usable: UsableVariable[]): boolean {
-    return usable.some((v) => usableAt(lineIndex, v));
-}
-
-function usableAt(lineIndex: number, variable: UsableVariable): boolean {
-    if (variable.usableFromLine && variable.usableToLine) {
-        return variable.usableFromLine <= lineIndex && lineIndex <= variable.usableToLine;
-    }
-    return true;
-}
-
-function usableVariablesAt(manifest: ast.PorterManifestYAML, lineIndex: number): readonly UsableVariable[] {
-    return Array.of(...usableVariables(manifest)).filter((v) => usableAt(lineIndex, v));
-}
-
-interface UsableVariable {
-    readonly text: string;
-    readonly usableFromLine?: number;
-    readonly usableToLine?: number;
-}
-
-function* usableVariables(manifest: ast.PorterManifestYAML): IterableIterator<UsableVariable> {
-    if (manifest.parameters) {
-        for (const e of manifest.parameters.entries) {
-            yield { text: `bundle.parameters.${e.name}` };
-        }
-    }
-
-    if (manifest.credentials) {
-        for (const e of manifest.credentials.entries) {
-            yield { text: `bundle.credentials.${e.name}` };
-        }
-    }
-
-    for (const a of manifest.actions) {
-        for (const s of a.steps) {
-            for (const o of s.outputs) {
-                yield { text: `bundle.outputs.${o.name}`, usableFromLine: s.endLine, usableToLine: a.endLine };
-            }
-        }
-    }
 }
 
 function fixes(diagnostic: vscode.Diagnostic, document: vscode.TextDocument, manifest: ast.PorterManifestYAML): readonly vscode.CodeAction[] {
