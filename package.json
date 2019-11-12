@@ -167,7 +167,6 @@
                             "stopOnEntry": true
                         }
                     }
-
                 ]
             }
         ]
@@ -186,6 +185,7 @@
         "@types/shelljs": "^0.8.1",
         "await-notify": "1.0.1",
         "cnabjs": "0.0.5",
+        "js-levenshtein": "^1.1.6",
         "mkdirp": "^0.5.1",
         "shelljs": "^0.8.3",
         "tmp": "^0.0.33",
@@ -193,6 +193,7 @@
         "yaml-ast-parser": "0.0.43"
     },
     "devDependencies": {
+        "@types/js-levenshtein": "^1.1.0",
         "@types/mkdirp": "^0.5.2",
         "@types/mocha": "^2.2.42",
         "@types/node": "10.12.25",
