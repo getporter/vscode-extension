@@ -1,6 +1,25 @@
 # Visual Studio Code Porter Tools
 
-Build CNAB bundles with Porter
+This extension helps you to build Cloud Native Application Bundles (CNAB) with Porter.  Features
+include:
+
+* Create a Porter project
+* Create and organise bundle installation steps
+* Build your Porter project into a bundle
+* Install a Porter bundle
+* Code completion and error checking for the Porter manifest
+* Navigation around the Porter manifest (Go To Definition and Find References)
+
+For more about Porter see https://porter.sh/.
+
+## Prerequisites
+
+You will need the Porter binary on your system PATH.  If you don't have this, you can download
+it from https://porter.sh/install/.
+
+If you have the Porter binary but it's not on your path, you can specify the file path
+using the `vscode-porter > porter-path` configuration setting.  This must include the
+full file path, not just the directory (and must include the `.exe` extension on Windows).
 
 ## Contributing
 
