@@ -3,6 +3,7 @@
     "displayName": "Porter",
     "description": "Build CNAB bundles with Porter",
     "version": "0.0.1",
+    "preview": true,
     "publisher": "ms-kubernetes-tools",
     "engines": {
         "vscode": "^1.30.0"
