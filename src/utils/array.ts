@@ -9,11 +9,17 @@ export function definedOf<T>(...items: (T | undefined)[]): T[] {
 declare global {
     interface Array<T> {
         choose<U>(fn: (t: T) => U | undefined): U[];
+        distinct(): T[];
         filterAsync(fn: (t: T) => Thenable<boolean>): Promise<T[]>;
     }
 }
 function choose<T, U>(this: T[], fn: (t: T) => U | undefined): U[] {
     return this.map(fn).filter((u) => u !== undefined).map((u) => u!);
+}
+
+function distinct<T>(this: T[]): T[] {
+    const values = new Set<T>(this).values();
+    return Array.of(...values);
 }
 
 async function filterAsync<T>(this: T[], fn: (t: T) => Thenable<boolean>): Promise<T[]> {
@@ -26,6 +32,13 @@ if (!Array.prototype.choose) {
     Object.defineProperty(Array.prototype, 'choose', {
         enumerable: false,
         value: choose
+    });
+}
+
+if (!Array.prototype.distinct) {
+    Object.defineProperty(Array.prototype, 'distinct', {
+        enumerable: false,
+        value: distinct
     });
 }
 

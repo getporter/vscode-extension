@@ -19,18 +19,20 @@ import * as definitionprovider from './navigation/definitionprovider';
 import * as referenceprovider from './navigation/referenceprovider';
 import * as diagnostics from './diagnostics/diagnostics';
 import * as codeactionprovider from './diagnostics/codeactionprovider';
+import * as variablescompletionprovider from './completion/variablescompletion';
 
 const PORTER_OUTPUT_CHANNEL = vscode.window.createOutputChannel('Porter');
 
 export async function activate(context: vscode.ExtensionContext) {
     const definitionProvider = definitionprovider.create();
     const referenceProvider = referenceprovider.create();
+    const variablesCompletionProvider = variablescompletionprovider.create();
     const codeActionProvider = codeactionprovider.create();
 
     const debugConfigurationProvider = new PorterInstallConfigurationProvider();
     const debugFactory = new PorterInstallDebugAdapterDescriptorFactory();
 
-    const porterManifestSelector = { language: 'yaml', pattern: '**/porter.yaml' };
+    const porterManifestSelector = { language: 'yaml', scheme: 'file', pattern: '**/porter.yaml' };
 
     const subscriptions = [
         vscode.commands.registerCommand('porter.createProject', createProject),
@@ -42,6 +44,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('porter.parameterise', parameteriseSelection),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
+        vscode.languages.registerCompletionItemProvider(porterManifestSelector, variablesCompletionProvider, ...variablescompletionprovider.COMPLETION_TRIGGERS),
         vscode.languages.registerCodeActionsProvider(porterManifestSelector, codeActionProvider, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
         vscode.debug.registerDebugConfigurationProvider('porter', debugConfigurationProvider),
         vscode.debug.registerDebugAdapterDescriptorFactory('porter', debugFactory),
