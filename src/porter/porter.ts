@@ -1,6 +1,5 @@
 import * as path from 'path';
 import * as tmp from 'tmp';
-import * as vscode from 'vscode';
 
 import * as config from '../config/config';
 import { Errorable } from '../utils/errorable';
@@ -9,7 +8,7 @@ import { fs } from '../utils/fs';
 import * as pairs from '../utils/pairs';
 import { CredentialInfo, CredentialSetContent } from './porter.objectmodel';
 
-const logChannel = vscode.window.createOutputChannel("Porter");
+import { PORTER_OUTPUT_CHANNEL as logChannel } from '../utils/logging';
 
 async function invokeObj<T>(sh: shell.Shell, command: string, args: string, opts: shell.ExecOpts, fn: (stdout: string) => T): Promise<Errorable<T>> {
     const bin = config.porterPath() || 'porter';

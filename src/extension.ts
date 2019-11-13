@@ -20,8 +20,7 @@ import * as referenceprovider from './navigation/referenceprovider';
 import * as diagnostics from './diagnostics/diagnostics';
 import * as codeactionprovider from './diagnostics/codeactionprovider';
 import * as variablescompletionprovider from './completion/variablescompletion';
-
-const PORTER_OUTPUT_CHANNEL = vscode.window.createOutputChannel('Porter');
+import { PORTER_OUTPUT_CHANNEL } from './utils/logging';
 
 export async function activate(context: vscode.ExtensionContext) {
     const definitionProvider = definitionprovider.create();
