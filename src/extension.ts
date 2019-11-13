@@ -21,6 +21,8 @@ import * as diagnostics from './diagnostics/diagnostics';
 import * as codeactionprovider from './diagnostics/codeactionprovider';
 import * as variablescompletionprovider from './completion/variablescompletion';
 import { PORTER_OUTPUT_CHANNEL } from './utils/logging';
+import { Reporter } from './telemetry/telemetry';
+import * as telemetry from './telemetry/telemetry-helper';
 
 export async function activate(context: vscode.ExtensionContext) {
     const definitionProvider = definitionprovider.create();
@@ -34,13 +36,14 @@ export async function activate(context: vscode.ExtensionContext) {
     const porterManifestSelector = { language: 'yaml', scheme: 'file', pattern: '**/porter.yaml' };
 
     const subscriptions = [
-        vscode.commands.registerCommand('porter.createProject', createProject),
-        vscode.commands.registerCommand('porter.build', build),
-        vscode.commands.registerCommand('porter.install', install),
-        vscode.commands.registerCommand('porter.insertHelmChart', insertHelmChart),
-        vscode.commands.registerTextEditorCommand('porter.moveStepUp', moveStepUp),
-        vscode.commands.registerTextEditorCommand('porter.moveStepDown', moveStepDown),
-        vscode.commands.registerCommand('porter.parameterise', parameteriseSelection),
+        registerTelemetry(context),
+        registerCommand('porter.createProject', createProject),
+        registerCommand('porter.build', build),
+        registerCommand('porter.install', install),
+        registerCommand('porter.insertHelmChart', insertHelmChart),
+        registerTextEditorCommand('porter.moveStepUp', moveStepUp),
+        registerTextEditorCommand('porter.moveStepDown', moveStepDown),
+        registerCommand('porter.parameterise', parameteriseSelection),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
         vscode.languages.registerCompletionItemProvider(porterManifestSelector, variablesCompletionProvider, ...variablescompletionprovider.COMPLETION_TRIGGERS),
@@ -59,6 +62,20 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+}
+
+function registerTelemetry(context: vscode.ExtensionContext): vscode.Disposable {
+    return new Reporter(context);
+}
+
+function registerCommand(command: string, callback: (...args: any[]) => any): vscode.Disposable {
+    const wrappedCallback = telemetry.telemetriseCommand(command, callback);
+    return vscode.commands.registerCommand(command, wrappedCallback);
+}
+
+function registerTextEditorCommand(command: string, callback: (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]) => void): vscode.Disposable {
+    const wrappedCallback = telemetry.telemetriseTextEditorCommand(command, callback);
+    return vscode.commands.registerTextEditorCommand(command, wrappedCallback);
 }
 
 async function createProject(): Promise<void> {
