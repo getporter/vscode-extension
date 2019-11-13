@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import * as ast from '../porter/ast';
+import { CommandResult } from './result';
 
 interface HelmRepoChart {
     readonly nodeCategory: 'helm-explorer-node';
@@ -19,44 +20,51 @@ interface HelmRepoChartVersion {
 
 type HelmRepoEntry = HelmRepoChart | HelmRepoChartVersion;
 
-export async function insertHelmChart(target?: any): Promise<void> {
+export async function insertHelmChart(target?: any): Promise<CommandResult> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage('This command requires an open editor containing the porter.yaml to insert into');
-        return;
+        return CommandResult.Failed;
     }
     const document = editor.document;
     if (!document.uri.fsPath.toLowerCase().endsWith('porter.yaml')) {
         vscode.window.showErrorMessage('This command requires an open editor containing the porter.yaml to insert into');
-        return;
+        return CommandResult.Failed;
     }
     const manifest = ast.parse(document.getText());
     if (!manifest) {
         vscode.window.showErrorMessage('Unable to parse open porter.yaml file: please fix any errors and try again');
-        return;
+        return CommandResult.Failed;
     }
     const installAction = manifest.actions.find((a) => a.name === 'install') || syntheticAction(editor, 'install');
 
     if (!target) {
         // TODO: prompt or prevent
         vscode.window.showErrorMessage('This command requires you to select a chart or chart version in a Helm repo');
-        return;
+        return CommandResult.Failed;
     }
     if (target.nodeCategory !== 'helm-explorer-node') {
         vscode.window.showErrorMessage('This command applies only to charts or chart versions in Helm repos');
-        return;
+        return CommandResult.Failed;
     }
 
-    // TODO: we need a version-safe API on the k8s side
-    const repoEntry = target as HelmRepoEntry;
+    try {
+        // TODO: we need a version-safe API on the k8s side
+        const repoEntry = target as HelmRepoEntry;
 
-    // TODO: we should actually insert this as a snippet so as to position
-    // the cursor for replacement
-    const needToCreateAction = (installAction === undefined);
-    const stepYAML = makeStepYAML(repoEntry, needToCreateAction);
-    const snippet = new vscode.SnippetString(stepYAML);
-    const insertLine = findInsertLine(editor, installAction);
-    editor.insertSnippet(snippet, new vscode.Position(insertLine, 0));
+        // TODO: we should actually insert this as a snippet so as to position
+        // the cursor for replacement
+        const needToCreateAction = (installAction === undefined);
+        const stepYAML = makeStepYAML(repoEntry, needToCreateAction);
+        const snippet = new vscode.SnippetString(stepYAML);
+        const insertLine = findInsertLine(editor, installAction);
+        editor.insertSnippet(snippet, new vscode.Position(insertLine, 0));
+
+        return CommandResult.Succeeded;
+    } catch (err) {
+        await vscode.window.showErrorMessage(`Insert failed: ${err}`);
+        return CommandResult.Failed;
+    }
 }
 
 function makeStepYAML(repoEntry: HelmRepoEntry, createAction: boolean): string {

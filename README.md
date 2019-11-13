@@ -27,8 +27,9 @@ This extension collects telemetry data to help us build a better experience for 
 bundles with Porter and VS Code. We only collect the following data:
 
 * Which commands are executed
+* Whether a command succeeded or failed
 
-We do not collect any information about image names, paths, etc. The extension respects
+We do not collect any information about image names, paths, error messages, etc. The extension respects
 the `telemetry.enableTelemetry` setting which you can learn more about in our
 [FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
 
