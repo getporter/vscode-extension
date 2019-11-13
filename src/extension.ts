@@ -21,6 +21,9 @@ import * as diagnostics from './diagnostics/diagnostics';
 import * as codeactionprovider from './diagnostics/codeactionprovider';
 import * as variablescompletionprovider from './completion/variablescompletion';
 import { PORTER_OUTPUT_CHANNEL } from './utils/logging';
+import { Reporter } from './telemetry/telemetry';
+import * as telemetry from './telemetry/telemetry-helper';
+import { CommandResult, commandResultOf } from './commands/result';
 
 export async function activate(context: vscode.ExtensionContext) {
     const definitionProvider = definitionprovider.create();
@@ -34,13 +37,14 @@ export async function activate(context: vscode.ExtensionContext) {
     const porterManifestSelector = { language: 'yaml', scheme: 'file', pattern: '**/porter.yaml' };
 
     const subscriptions = [
-        vscode.commands.registerCommand('porter.createProject', createProject),
-        vscode.commands.registerCommand('porter.build', build),
-        vscode.commands.registerCommand('porter.install', install),
-        vscode.commands.registerCommand('porter.insertHelmChart', insertHelmChart),
-        vscode.commands.registerTextEditorCommand('porter.moveStepUp', moveStepUp),
-        vscode.commands.registerTextEditorCommand('porter.moveStepDown', moveStepDown),
-        vscode.commands.registerCommand('porter.parameterise', parameteriseSelection),
+        registerTelemetry(context),
+        registerCommand('porter.createProject', createProject),
+        registerCommand('porter.build', build),
+        registerCommand('porter.install', install),
+        registerCommand('porter.insertHelmChart', insertHelmChart),
+        registerTextEditorCommand('porter.moveStepUp', moveStepUp),
+        registerTextEditorCommand('porter.moveStepDown', moveStepDown),
+        registerCommand('porter.parameterise', parameteriseSelection),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
         vscode.languages.registerCompletionItemProvider(porterManifestSelector, variablesCompletionProvider, ...variablescompletionprovider.COMPLETION_TRIGGERS),
@@ -61,10 +65,24 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
 }
 
-async function createProject(): Promise<void> {
+function registerTelemetry(context: vscode.ExtensionContext): vscode.Disposable {
+    return new Reporter(context);
+}
+
+function registerCommand(command: string, callback: (...args: any[]) => CommandResult | Promise<CommandResult>): vscode.Disposable {
+    const wrappedCallback = telemetry.telemetriseCommand(command, callback);
+    return vscode.commands.registerCommand(command, wrappedCallback);
+}
+
+function registerTextEditorCommand(command: string, callback: (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]) => CommandResult | Promise<CommandResult>): vscode.Disposable {
+    const wrappedCallback = telemetry.telemetriseTextEditorCommand(command, callback);
+    return vscode.commands.registerTextEditorCommand(command, wrappedCallback);
+}
+
+async function createProject(): Promise<CommandResult> {
     const folder = await selectWorkspaceFolder("Choose folder to create project in");
     if (!folder) {
-        return;
+        return CommandResult.Cancelled;
     }
 
     // TODO: check if we already have a porter.yaml or cnab directory, and confirm overwrite
@@ -78,15 +96,17 @@ async function createProject(): Promise<void> {
             const document = await vscode.workspace.openTextDocument(fileToOpen);
             await vscode.window.showTextDocument(document);
         }
+        return CommandResult.Succeeded;
     } else {
-        await vscode.window.showErrorMessage(`Unable to scaffold new Porter project in ${rootPath}: ${createResult.error[0]}`);
+        vscode.window.showErrorMessage(`Unable to scaffold new Porter project in ${rootPath}: ${createResult.error[0]}`);
+        return CommandResult.Failed;
     }
 }
 
-async function build(): Promise<void> {
+async function build(): Promise<CommandResult> {
     const folder = await selectWorkspaceFolder("Choose folder to build");
     if (!folder) {
-        return;
+        return CommandResult.Cancelled;
     }
 
     const folderPath = folder.uri.fsPath;
@@ -94,38 +114,39 @@ async function build(): Promise<void> {
         () => porter.build(shell.shell, folderPath)
     );
 
-    await showPorterResult('build', folderPath, buildResult);
+    showPorterResult('build', folderPath, buildResult);
+    return commandResultOf(buildResult);
 }
 
-async function install(): Promise<void> {
+async function install(): Promise<CommandResult> {
     const folder = await selectWorkspaceFolder("Choose folder to install");
     if (!folder) {
-        return;
+        return CommandResult.Cancelled;
     }
 
     const bundlePick = folderSelection(folder.uri.fsPath);
     const suggestedName = suggestName(bundlePick);
     const name = await vscode.window.showInputBox({ prompt: `Install bundle in ${displayName(bundlePick)} as...`, value: suggestedName });
     if (!name) {
-        return;
+        return CommandResult.Cancelled;
     }
 
     const bundleManifestResult = await longRunning('Loading bundle...', () => manifest(bundlePick));
     if (failed(bundleManifestResult)) {
-        await vscode.window.showErrorMessage(`Failed to load bundle: ${bundleManifestResult.error[0]}`);
-        return;
+        vscode.window.showErrorMessage(`Failed to load bundle: ${bundleManifestResult.error[0]}`);
+        return CommandResult.Failed;
     }
 
     const bundleManifest = bundleManifestResult.result;
 
     const credentialSet = await promptForCredentials(bundleManifest, shell.shell, 'Credential set to install bundle with');
     if (credentialSet.cancelled) {
-        return;
+        return CommandResult.Cancelled;
     }
 
     const parameters = await promptForParameters(bundlePick, bundleManifest, 'install', 'Install', 'Enter installation parameters');
     if (parameters.cancelled) {
-        return;
+        return CommandResult.Cancelled;
     }
 
     const folderPath = folder.uri.fsPath;
@@ -136,7 +157,8 @@ async function install(): Promise<void> {
     if (succeeded(installResult)) {
         showInOutputTitled(`Installed ${displayName(bundlePick)} as ${name}`, installResult.result);
     }
-    await showPorterResult('install', name, installResult);
+    showPorterResult('install', name, installResult);
+    return commandResultOf(installResult);
 }
 
 function showInOutputTitled(title: string, body: string): void {

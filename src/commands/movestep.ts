@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import * as ast from '../porter/ast';
+import { CommandResult } from './result';
 
 abstract class MoveStepDirection {
     abstract allowsMove(action: ast.PorterActionYAML, stepIndex: number): boolean;
@@ -36,38 +37,38 @@ abstract class MoveStepDirection {
     };
 }
 
-export function moveStepUp(editor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]): void {
-    moveStep(editor, edit, MoveStepDirection.UP);
+export function moveStepUp(editor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]): CommandResult {
+    return moveStep(editor, edit, MoveStepDirection.UP);
 }
 
-export function moveStepDown(editor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]): void {
-    moveStep(editor, edit, MoveStepDirection.DOWN);
+export function moveStepDown(editor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]): CommandResult {
+    return moveStep(editor, edit, MoveStepDirection.DOWN);
 }
 
-function moveStep(editor: vscode.TextEditor, edit: vscode.TextEditorEdit, direction: MoveStepDirection): void {
+function moveStep(editor: vscode.TextEditor, edit: vscode.TextEditorEdit, direction: MoveStepDirection): CommandResult {
     const document = editor.document;
     if (!document.uri.fsPath.toLowerCase().endsWith('porter.yaml')) {
         vscode.window.showErrorMessage('This command requires an open editor containing the porter.yaml to insert into');
-        return;
+        return CommandResult.Failed;
     }
     const manifest = ast.parse(document.getText());
     if (!manifest) {
         vscode.window.showErrorMessage('Unable to parse open porter.yaml file: please fix any errors and try again');
-        return;
+        return CommandResult.Failed;
     }
 
     const originalCursorPosition = editor.selection.active;
     const cursorLocation = locateCursorInActions(manifest, originalCursorPosition.line);
     if (!cursorLocation) {
         vscode.window.showErrorMessage('This command requires the cursor to be on the step you want to move');
-        return;
+        return CommandResult.Failed;
     }
 
     const [action, stepIndex] = cursorLocation;
 
     if (!direction.allowsMove(action, stepIndex)) {
         vscode.window.showInformationMessage(`This step is already at the ${direction.utmost} and cannot be moved ${direction.name}`);
-        return;
+        return CommandResult.Succeeded;
     }
 
     const movingStepIndex = direction.moverIndex(stepIndex);
@@ -88,7 +89,7 @@ function moveStep(editor: vscode.TextEditor, edit: vscode.TextEditorEdit, direct
     edit.insert(targetPosition, movingStepText);
     editor.selection = new vscode.Selection(newCursorPosition, newCursorPosition);
 
-    return;
+    return CommandResult.Succeeded;
 }
 
 function locateCursorInActions(manifest: ast.PorterManifestYAML, line: number): [ast.PorterActionYAML, number] | undefined {
