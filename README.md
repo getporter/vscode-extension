@@ -35,14 +35,10 @@ the `telemetry.enableTelemetry` setting which you can learn more about in our
 
 ## Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.microsoft.com.
+This project welcomes contributions and suggestions.
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+For contributions in the form of pull requests, a DCO sign-off is required.
+See [Signing your commits](https://porter.sh/src/CONTRIBUTING.md#signing-your-commits)
+for details on this requirement.
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+This project adheres to [Porter's Code of Conduct](https:/porter.sh/src/CODE_OF_CONDUCT.md).
