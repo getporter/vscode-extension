@@ -207,6 +207,6 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/deislabs/porter-vscode"
+        "url": "https://github.com/getporter/vscode-extension"
     }
 }
