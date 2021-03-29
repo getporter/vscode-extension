@@ -203,7 +203,7 @@
         "@types/tmp": "0.0.33",
         "tslint": "^5.8.0",
         "typescript": "^3.6.4",
-        "vscode": "^1.1.6"
+        "vscode": "^1.1.37"
     },
     "repository": {
         "type": "git",
