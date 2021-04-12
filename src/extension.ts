@@ -24,12 +24,15 @@ import { PORTER_OUTPUT_CHANNEL } from './utils/logging';
 import { Reporter } from './telemetry/telemetry';
 import * as telemetry from './telemetry/telemetry-helper';
 import { CommandResult, commandResultOf } from './commands/result';
+import { InstallationExplorer } from './explorer/installation/installation-explorer';
 
 export async function activate(context: vscode.ExtensionContext) {
     const definitionProvider = definitionprovider.create();
     const referenceProvider = referenceprovider.create();
     const variablesCompletionProvider = variablescompletionprovider.create();
     const codeActionProvider = codeactionprovider.create();
+
+    const installationsExplorer = new InstallationExplorer(shell.shell);
 
     const debugConfigurationProvider = new PorterInstallConfigurationProvider();
     const debugFactory = new PorterInstallDebugAdapterDescriptorFactory();
@@ -45,6 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
         registerTextEditorCommand('porter.moveStepUp', moveStepUp),
         registerTextEditorCommand('porter.moveStepDown', moveStepDown),
         registerCommand('porter.parameterise', parameteriseSelection),
+        vscode.window.registerTreeDataProvider('porter.installations', installationsExplorer),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
         vscode.languages.registerCompletionItemProvider(porterManifestSelector, variablesCompletionProvider, ...variablescompletionprovider.COMPLETION_TRIGGERS),

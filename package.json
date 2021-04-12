@@ -27,6 +27,7 @@
         "onCommand:porter.moveStepDown",
         "onCommand:porter.parameterise",
         "onView:extension.vsKubernetesHelmRepoExplorer",
+        "onView:porter.installations",
         "onDebugResolve:porter",
         "onLanguage:yaml"
     ],
@@ -171,7 +172,24 @@
                     }
                 ]
             }
-        ]
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "porter",
+                    "title": "Porter",
+                    "icon": "resources/porter.png"
+                }
+            ]
+        },
+        "views": {
+            "porter": [
+                {
+                    "id": "porter.installations",
+                    "name": "Installations"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
