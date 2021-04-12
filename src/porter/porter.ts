@@ -6,7 +6,7 @@ import { Errorable } from '../utils/errorable';
 import * as shell from '../utils/shell';
 import { fs } from '../utils/fs';
 import * as pairs from '../utils/pairs';
-import { CredentialInfo, CredentialSetContent } from './porter.objectmodel';
+import { CredentialInfo, CredentialSetContent, Installation } from './porter.objectmodel';
 
 import { PORTER_OUTPUT_CHANNEL as logChannel } from '../utils/logging';
 
@@ -39,6 +39,13 @@ export async function listCredentialSets(sh: shell.Shell): Promise<Errorable<str
             .map((c) => c.Name);
     }
     return await invokeObj(sh, 'credentials list', '-o json', { }, parse);
+}
+
+export async function listInstallations(sh: shell.Shell): Promise<Errorable<Installation[]>> {
+    function parse(stdout: string): Installation[] {
+        return (JSON.parse(stdout) as Installation[]);
+    }
+    return await invokeObj(sh, 'list', '-o json', { }, parse);
 }
 
 export async function getCredentials(sh: shell.Shell, credentialSetName: string): Promise<Errorable<CredentialSetContent>> {

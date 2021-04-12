@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+
+import * as porter from '../../porter/porter';
 import { Shell } from '../../utils/shell';
 import { ExplorerErrorNode } from '../errornode';
 import { Node } from '../node';
@@ -17,10 +19,16 @@ export class InstallationExplorer implements vscode.TreeDataProvider<Installatio
         if (element) {
             return [];
         } else {
-            return [
-                new InstallationNode("Some installation")
-            ];
+            return this.rootNodes();
         }
+    }
+
+    async rootNodes(): Promise<InstallationExplorerTreeNode[]> {
+        const installations = await porter.listInstallations(this.shell);
+        if (!installations.succeeded) {
+            return [new ExplorerErrorNode(installations.error[0])];
+        }
+        return installations.result.map((i) => new InstallationNode(i.Name));
     }
 }
 
