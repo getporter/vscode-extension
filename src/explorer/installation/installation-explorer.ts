@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import * as porter from '../../porter/porter';
-import { Installation } from '../../porter/porter.objectmodel';
+import { Installation, InstallationHistoryEntry } from '../../porter/porter.objectmodel';
 import { Shell } from '../../utils/shell';
 import { ExplorerErrorNode } from '../errornode';
 import { Node } from '../node';
@@ -18,7 +18,7 @@ export class InstallationExplorer implements vscode.TreeDataProvider<Installatio
 
     getChildren(element?: InstallationExplorerTreeNode): vscode.ProviderResult<InstallationExplorerTreeNode[]> {
         if (element) {
-            return [];
+            return element.getChildren();
         } else {
             return this.rootNodes();
         }
@@ -29,22 +29,42 @@ export class InstallationExplorer implements vscode.TreeDataProvider<Installatio
         if (!installations.succeeded) {
             return [new ExplorerErrorNode(installations.error[0])];
         }
-        return installations.result.map((i) => new InstallationNode(i));
+        return installations.result.map((i) => new InstallationNode(this.shell, i));
     }
 }
 
-class InstallationNode implements Node {
+class InstallationNode implements Node<InstallationExplorerTreeNode> {
     readonly kind = 'installation' as const;
-    constructor(private readonly installation: Installation) {}
+    constructor(private readonly shell: Shell, private readonly installation: Installation) {}
+    async getChildren(): Promise<InstallationExplorerTreeNode[]> {
+        const installationDetail = await porter.getInstallationDetail(this.shell, this.installation.Name);
+        if (!installationDetail.succeeded) {
+            return [new ExplorerErrorNode(installationDetail.error[0])];
+        }
+        return installationDetail.result.History.map((e) => new InstallationHistoryEntryNode(e));
+    }
     getTreeItem(): vscode.TreeItem {
-        const treeItem = new vscode.TreeItem(this.installation.Name);
+        const treeItem = new vscode.TreeItem(this.installation.Name, vscode.TreeItemCollapsibleState.Collapsed);
         treeItem.tooltip = `Last action: ${this.installation.Action} (${this.installation.Status})\nat: ${displayTime(this.installation.Modified)}`;
+        return treeItem;
+    }
+}
+
+class InstallationHistoryEntryNode implements Node<InstallationExplorerTreeNode> {
+    readonly kind = 'installation-history-entry' as const;
+    constructor(private readonly data: InstallationHistoryEntry) {}
+    getChildren(): InstallationExplorerTreeNode[] | Promise<InstallationExplorerTreeNode[]> {
+        return [];
+    }
+    getTreeItem(): vscode.TreeItem {
+        const treeItem = new vscode.TreeItem(`${this.data.Action} at ${displayTime(this.data.Timestamp)} (${this.data.ClaimID})`);
         return treeItem;
     }
 }
 
 export type InstallationExplorerTreeNode =
     InstallationNode |
+    InstallationHistoryEntryNode |
     ExplorerErrorNode;
 
 function displayTime(timeString: string): string {
