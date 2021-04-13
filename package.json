@@ -26,6 +26,7 @@
         "onCommand:porter.moveStepUp",
         "onCommand:porter.moveStepDown",
         "onCommand:porter.parameterise",
+        "onCommand:porter.viewOutputs",
         "onView:extension.vsKubernetesHelmRepoExplorer",
         "onView:porter.installations",
         "onDebugResolve:porter",
@@ -68,6 +69,11 @@
                 "command": "porter.parameterise",
                 "title": "Extract Selection to Parameter",
                 "category": "Porter"
+            },
+            {
+                "command": "porter.viewOutputs",
+                "title": "View Outputs",
+                "category": "Porter"
             }
         ],
         "menus": {
@@ -76,6 +82,11 @@
                     "command": "porter.insertHelmChart",
                     "group": "9",
                     "when": "view == extension.vsKubernetesHelmRepoExplorer && viewItem =~ /vsKubernetes\\.((chart)|(chartversion))/i"
+                },
+                {
+                    "command": "porter.viewOutputs",
+                    "group": "1",
+                    "when": "view == porter.installations && viewItem == porter.installation"
                 }
             ],
             "editor/context": [
@@ -88,6 +99,12 @@
                     "command": "porter.moveStepDown",
                     "group": "9@2",
                     "when": "resourceFilename =~ /porter\\.yaml/i"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "porter.viewOutputs",
+                    "when": "never"
                 }
             ]
         },

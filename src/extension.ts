@@ -48,6 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
         registerTextEditorCommand('porter.moveStepUp', moveStepUp),
         registerTextEditorCommand('porter.moveStepDown', moveStepDown),
         registerCommand('porter.parameterise', parameteriseSelection),
+        registerCommand('porter.viewOutputs', viewOutputs),
         vscode.window.registerTreeDataProvider('porter.installations', installationsExplorer),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
@@ -172,4 +173,13 @@ function showInOutputTitled(title: string, body: string): void {
     PORTER_OUTPUT_CHANNEL.appendLine('');
     PORTER_OUTPUT_CHANNEL.appendLine(body);
     PORTER_OUTPUT_CHANNEL.show();
+}
+
+async function viewOutputs(target: any): Promise<CommandResult> {
+    if (target && target.viewOutputs) {
+        await target.viewOutputs();
+        return CommandResult.Succeeded;
+    } else {
+        return CommandResult.Failed;
+    }
 }
