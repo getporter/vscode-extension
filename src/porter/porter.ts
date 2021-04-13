@@ -55,6 +55,13 @@ export async function getInstallationDetail(sh: shell.Shell, installationId: str
     return await invokeObj(sh, 'show', `${installationId} -o json`, { }, parse);
 }
 
+export async function getClaimLogs(sh: shell.Shell, claimId: string): Promise<Errorable<string[]>> {
+    function parse(stdout: string): string[] {
+        return stdout.split('\n');
+    }
+    return await invokeObj(sh, 'logs', `--run ${claimId}`, { }, parse);
+}
+
 export async function getCredentials(sh: shell.Shell, credentialSetName: string): Promise<Errorable<CredentialSetContent>> {
     function parse(stdout: string): CredentialSetContent {
         return JSON.parse(stdout);

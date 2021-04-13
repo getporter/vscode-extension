@@ -27,6 +27,7 @@
         "onCommand:porter.moveStepDown",
         "onCommand:porter.parameterise",
         "onCommand:porter.viewOutputs",
+        "onCommand:porter.viewLogs",
         "onView:extension.vsKubernetesHelmRepoExplorer",
         "onView:porter.installations",
         "onDebugResolve:porter",
@@ -74,6 +75,11 @@
                 "command": "porter.viewOutputs",
                 "title": "View Outputs",
                 "category": "Porter"
+            },
+            {
+                "command": "porter.viewLogs",
+                "title": "View Logs",
+                "category": "Porter"
             }
         ],
         "menus": {
@@ -87,6 +93,11 @@
                     "command": "porter.viewOutputs",
                     "group": "1",
                     "when": "view == porter.installations && viewItem == porter.installation"
+                },
+                {
+                    "command": "porter.viewLogs",
+                    "group": "1",
+                    "when": "view == porter.installations && viewItem == porter.installation-history-entry"
                 }
             ],
             "editor/context": [
@@ -104,6 +115,10 @@
             "commandPalette": [
                 {
                     "command": "porter.viewOutputs",
+                    "when": "never"
+                },
+                {
+                    "command": "porter.viewLogs",
                     "when": "never"
                 }
             ]

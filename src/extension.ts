@@ -49,6 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
         registerTextEditorCommand('porter.moveStepDown', moveStepDown),
         registerCommand('porter.parameterise', parameteriseSelection),
         registerCommand('porter.viewOutputs', viewOutputs),
+        registerCommand('porter.viewLogs', viewLogs),
         vscode.window.registerTreeDataProvider('porter.installations', installationsExplorer),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
@@ -178,6 +179,15 @@ function showInOutputTitled(title: string, body: string): void {
 async function viewOutputs(target: any): Promise<CommandResult> {
     if (target && target.viewOutputs) {
         await target.viewOutputs();
+        return CommandResult.Succeeded;
+    } else {
+        return CommandResult.Failed;
+    }
+}
+
+async function viewLogs(target: any): Promise<CommandResult> {
+    if (target && target.viewLogs) {
+        await target.viewLogs();
         return CommandResult.Succeeded;
     } else {
         return CommandResult.Failed;
