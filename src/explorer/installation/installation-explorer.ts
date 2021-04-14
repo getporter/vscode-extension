@@ -81,7 +81,10 @@ class InstallationHistoryEntryNode implements Node<InstallationExplorerTreeNode>
     }
     getTreeItem(): vscode.TreeItem {
         const treeItem = new vscode.TreeItem(`${this.data.Action} at ${displayTime(this.data.Timestamp)}`);
-        treeItem.contextValue = 'porter.installation-history-entry porter.has-logs porter.has-copiable-id';
+        treeItem.contextValue = 'porter.installation-history-entry porter.has-copiable-id';
+        if (this.data.HasLogs) {
+            treeItem.contextValue += ' porter.has-logs';
+        }
         return treeItem;
     }
 
