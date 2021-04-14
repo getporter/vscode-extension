@@ -32,7 +32,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const variablesCompletionProvider = variablescompletionprovider.create();
     const codeActionProvider = codeactionprovider.create();
 
-    const installationsExplorer = new InstallationExplorer(shell.shell);
+    const installationExplorer = new InstallationExplorer(shell.shell);
 
     const debugConfigurationProvider = new PorterInstallConfigurationProvider();
     const debugFactory = new PorterInstallDebugAdapterDescriptorFactory();
@@ -50,7 +50,8 @@ export async function activate(context: vscode.ExtensionContext) {
         registerCommand('porter.parameterise', parameteriseSelection),
         registerCommand('porter.viewOutputs', viewOutputs),
         registerCommand('porter.viewLogs', viewLogs),
-        vscode.window.registerTreeDataProvider('porter.installations', installationsExplorer),
+        registerCommand('porter.refreshInstallationExplorer', () => installationExplorer.refresh()),
+        vscode.window.registerTreeDataProvider('porter.installations', installationExplorer),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
         vscode.languages.registerCompletionItemProvider(porterManifestSelector, variablesCompletionProvider, ...variablescompletionprovider.COMPLETION_TRIGGERS),

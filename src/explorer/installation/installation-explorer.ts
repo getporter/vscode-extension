@@ -34,6 +34,11 @@ export class InstallationExplorer implements vscode.TreeDataProvider<Installatio
         }
         return installations.result.map((i) => new InstallationNode(this.shell, i));
     }
+
+    refresh(): CommandResult {
+        this.onDidChangeEmitter.fire();
+        return CommandResult.Succeeded;
+    }
 }
 
 class InstallationNode implements Node<InstallationExplorerTreeNode> {

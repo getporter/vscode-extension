@@ -28,6 +28,7 @@
         "onCommand:porter.parameterise",
         "onCommand:porter.viewOutputs",
         "onCommand:porter.viewLogs",
+        "onCommand:porter.refreshInstallationExplorer",
         "onView:extension.vsKubernetesHelmRepoExplorer",
         "onView:porter.installations",
         "onDebugResolve:porter",
@@ -80,6 +81,12 @@
                 "command": "porter.viewLogs",
                 "title": "View Logs",
                 "category": "Porter"
+            },
+            {
+                "command": "porter.refreshInstallationExplorer",
+                "title": "Refresh Installation Explorer",
+                "icon": "$(refresh)",
+                "category": "Porter"
             }
         ],
         "menus": {
@@ -98,6 +105,13 @@
                     "command": "porter.viewLogs",
                     "group": "1",
                     "when": "view == porter.installations && viewItem == porter.installation-history-entry"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "porter.refreshInstallationExplorer",
+                    "group": "navigation",
+                    "when": "view == porter.installations"
                 }
             ],
             "editor/context": [
