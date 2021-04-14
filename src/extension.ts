@@ -25,6 +25,9 @@ import { Reporter } from './telemetry/telemetry';
 import * as telemetry from './telemetry/telemetry-helper';
 import { CommandResult, commandResultOf } from './commands/result';
 import { InstallationExplorer } from './explorer/installation/installation-explorer';
+import { viewOutputs } from './commands/viewoutputs';
+import { viewLogs } from './commands/viewlogs';
+import { copyId } from './commands/copyId';
 
 export async function activate(context: vscode.ExtensionContext) {
     const definitionProvider = definitionprovider.create();
@@ -50,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
         registerCommand('porter.parameterise', parameteriseSelection),
         registerCommand('porter.viewOutputs', viewOutputs),
         registerCommand('porter.viewLogs', viewLogs),
+        registerCommand('porter.copyId', copyId),
         registerCommand('porter.refreshInstallationExplorer', () => installationExplorer.refresh()),
         vscode.window.registerTreeDataProvider('porter.installations', installationExplorer),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
@@ -175,22 +179,4 @@ function showInOutputTitled(title: string, body: string): void {
     PORTER_OUTPUT_CHANNEL.appendLine('');
     PORTER_OUTPUT_CHANNEL.appendLine(body);
     PORTER_OUTPUT_CHANNEL.show();
-}
-
-async function viewOutputs(target: any): Promise<CommandResult> {
-    if (target && target.viewOutputs) {
-        await target.viewOutputs();
-        return CommandResult.Succeeded;
-    } else {
-        return CommandResult.Failed;
-    }
-}
-
-async function viewLogs(target: any): Promise<CommandResult> {
-    if (target && target.viewLogs) {
-        await target.viewLogs();
-        return CommandResult.Succeeded;
-    } else {
-        return CommandResult.Failed;
-    }
 }

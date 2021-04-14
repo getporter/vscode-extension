@@ -28,6 +28,7 @@
         "onCommand:porter.parameterise",
         "onCommand:porter.viewOutputs",
         "onCommand:porter.viewLogs",
+        "onCommand:porter.copyId",
         "onCommand:porter.refreshInstallationExplorer",
         "onView:extension.vsKubernetesHelmRepoExplorer",
         "onView:porter.installations",
@@ -83,6 +84,11 @@
                 "category": "Porter"
             },
             {
+                "command": "porter.copyId",
+                "title": "Copy ID to Clipboard",
+                "category": "Porter"
+            },
+            {
                 "command": "porter.refreshInstallationExplorer",
                 "title": "Refresh Installation Explorer",
                 "icon": "$(refresh)",
@@ -99,12 +105,17 @@
                 {
                     "command": "porter.viewOutputs",
                     "group": "1",
-                    "when": "view == porter.installations && viewItem == porter.installation"
+                    "when": "viewItem =~ /porter\\.has-outputs/i"
                 },
                 {
                     "command": "porter.viewLogs",
                     "group": "1",
-                    "when": "view == porter.installations && viewItem == porter.installation-history-entry"
+                    "when": "viewItem =~ /porter\\.has-logs/i"
+                },
+                {
+                    "command": "porter.copyId",
+                    "group": "2",
+                    "when": "viewItem =~ /porter\\.has-copiable-id/i"
                 }
             ],
             "view/title": [
@@ -133,6 +144,10 @@
                 },
                 {
                     "command": "porter.viewLogs",
+                    "when": "never"
+                },
+                {
+                    "command": "porter.copyId",
                     "when": "never"
                 }
             ]

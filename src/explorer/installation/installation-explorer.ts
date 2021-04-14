@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
+import { CopyId } from '../../commands/copyId';
 import { CommandResult } from '../../commands/result';
+import { ViewLogs } from '../../commands/viewlogs';
+import { ViewOutputs } from '../../commands/viewoutputs';
 
 import * as porter from '../../porter/porter';
 import { Installation, InstallationHistoryEntry } from '../../porter/porter.objectmodel';
@@ -41,7 +44,7 @@ export class InstallationExplorer implements vscode.TreeDataProvider<Installatio
     }
 }
 
-class InstallationNode implements Node<InstallationExplorerTreeNode> {
+class InstallationNode implements Node<InstallationExplorerTreeNode>, ViewOutputs {
     readonly kind = 'installation' as const;
     constructor(private readonly shell: Shell, private readonly installation: Installation) {}
     async getChildren(): Promise<InstallationExplorerTreeNode[]> {
@@ -53,7 +56,7 @@ class InstallationNode implements Node<InstallationExplorerTreeNode> {
     }
     getTreeItem(): vscode.TreeItem {
         const treeItem = new vscode.TreeItem(this.installation.Name, vscode.TreeItemCollapsibleState.Collapsed);
-        treeItem.contextValue = 'porter.installation';
+        treeItem.contextValue = 'porter.installation porter.has-outputs';
         treeItem.tooltip = `Last action: ${this.installation.Action} (${this.installation.Status})\nat: ${displayTime(this.installation.Modified)}`;
         return treeItem;
     }
@@ -70,15 +73,15 @@ class InstallationNode implements Node<InstallationExplorerTreeNode> {
     }
 }
 
-class InstallationHistoryEntryNode implements Node<InstallationExplorerTreeNode> {
+class InstallationHistoryEntryNode implements Node<InstallationExplorerTreeNode>, ViewLogs, CopyId {
     readonly kind = 'installation-history-entry' as const;
     constructor(private readonly shell: Shell, private readonly data: InstallationHistoryEntry) {}
     getChildren(): InstallationExplorerTreeNode[] | Promise<InstallationExplorerTreeNode[]> {
         return [];
     }
     getTreeItem(): vscode.TreeItem {
-        const treeItem = new vscode.TreeItem(`${this.data.Action} at ${displayTime(this.data.Timestamp)} (${this.data.ClaimID})`);
-        treeItem.contextValue = 'porter.installation-history-entry';
+        const treeItem = new vscode.TreeItem(`${this.data.Action} at ${displayTime(this.data.Timestamp)}`);
+        treeItem.contextValue = 'porter.installation-history-entry porter.has-logs porter.has-copiable-id';
         return treeItem;
     }
 
@@ -90,6 +93,11 @@ class InstallationHistoryEntryNode implements Node<InstallationExplorerTreeNode>
         }
         const title = `Porter Logs - ${this.data.ClaimID}`;
         await viewLogs(title, logs.result);
+        return CommandResult.Succeeded;
+    }
+
+    async copyId(): Promise<CommandResult> {
+        vscode.env.clipboard.writeText(this.data.ClaimID);
         return CommandResult.Succeeded;
     }
 }
