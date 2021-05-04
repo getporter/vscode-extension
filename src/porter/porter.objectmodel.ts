@@ -46,3 +46,36 @@ export function isPath(s: CredentialSource): s is PathCredentialSource {
 export function isCommand(s: CredentialSource): s is ShellCommandCredentialSource {
     return (s as any).command;
 }
+
+export interface Installation {
+    readonly Name: string;
+    readonly Created: string;
+    readonly Modified: string;
+    readonly Action: string;
+    readonly Status: string;
+    readonly History: ReadonlyArray<InstallationHistoryEntry>;  // only has latest in practice
+}
+
+export interface InstallationDetail {
+    readonly Name: string;
+    readonly Created: string;
+    readonly Modified: string;
+    readonly Action: string;
+    readonly Status: string;
+    readonly Outputs: ReadonlyArray<InstallationOutput>;
+    readonly History: ReadonlyArray<InstallationHistoryEntry>;
+}
+
+export interface InstallationHistoryEntry {
+    readonly ClaimID: string;
+    readonly Action: string;
+    readonly Timestamp: string;
+    readonly Status: string;
+    readonly HasLogs: boolean;
+}
+
+export interface InstallationOutput {
+    readonly Name: string;
+    readonly Value: string;
+    readonly Type: string;
+}

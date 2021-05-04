@@ -26,7 +26,12 @@
         "onCommand:porter.moveStepUp",
         "onCommand:porter.moveStepDown",
         "onCommand:porter.parameterise",
+        "onCommand:porter.viewOutputs",
+        "onCommand:porter.viewLogs",
+        "onCommand:porter.copyId",
+        "onCommand:porter.refreshInstallationExplorer",
         "onView:extension.vsKubernetesHelmRepoExplorer",
+        "onView:porter.installations",
         "onDebugResolve:porter",
         "onLanguage:yaml"
     ],
@@ -67,6 +72,27 @@
                 "command": "porter.parameterise",
                 "title": "Extract Selection to Parameter",
                 "category": "Porter"
+            },
+            {
+                "command": "porter.viewOutputs",
+                "title": "View Outputs",
+                "category": "Porter"
+            },
+            {
+                "command": "porter.viewLogs",
+                "title": "View Logs",
+                "category": "Porter"
+            },
+            {
+                "command": "porter.copyId",
+                "title": "Copy ID to Clipboard",
+                "category": "Porter"
+            },
+            {
+                "command": "porter.refreshInstallationExplorer",
+                "title": "Refresh Installation Explorer",
+                "icon": "$(refresh)",
+                "category": "Porter"
             }
         ],
         "menus": {
@@ -75,6 +101,28 @@
                     "command": "porter.insertHelmChart",
                     "group": "9",
                     "when": "view == extension.vsKubernetesHelmRepoExplorer && viewItem =~ /vsKubernetes\\.((chart)|(chartversion))/i"
+                },
+                {
+                    "command": "porter.viewOutputs",
+                    "group": "1",
+                    "when": "viewItem =~ /porter\\.has-outputs/i"
+                },
+                {
+                    "command": "porter.viewLogs",
+                    "group": "1",
+                    "when": "viewItem =~ /porter\\.has-logs/i"
+                },
+                {
+                    "command": "porter.copyId",
+                    "group": "2",
+                    "when": "viewItem =~ /porter\\.has-copiable-id/i"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "porter.refreshInstallationExplorer",
+                    "group": "navigation",
+                    "when": "view == porter.installations"
                 }
             ],
             "editor/context": [
@@ -87,6 +135,20 @@
                     "command": "porter.moveStepDown",
                     "group": "9@2",
                     "when": "resourceFilename =~ /porter\\.yaml/i"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "porter.viewOutputs",
+                    "when": "never"
+                },
+                {
+                    "command": "porter.viewLogs",
+                    "when": "never"
+                },
+                {
+                    "command": "porter.copyId",
+                    "when": "never"
                 }
             ]
         },
@@ -171,7 +233,24 @@
                     }
                 ]
             }
-        ]
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "porter",
+                    "title": "Porter",
+                    "icon": "resources/porter.png"
+                }
+            ]
+        },
+        "views": {
+            "porter": [
+                {
+                    "id": "porter.installations",
+                    "name": "Installations"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
@@ -203,7 +282,7 @@
         "@types/tmp": "0.0.33",
         "tslint": "^5.8.0",
         "typescript": "^3.6.4",
-        "vscode": "^1.1.6"
+        "vscode": "^1.1.37"
     },
     "repository": {
         "type": "git",

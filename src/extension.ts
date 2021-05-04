@@ -24,12 +24,18 @@ import { PORTER_OUTPUT_CHANNEL } from './utils/logging';
 import { Reporter } from './telemetry/telemetry';
 import * as telemetry from './telemetry/telemetry-helper';
 import { CommandResult, commandResultOf } from './commands/result';
+import { InstallationExplorer } from './explorer/installation/installation-explorer';
+import { viewOutputs } from './commands/viewoutputs';
+import { viewLogs } from './commands/viewlogs';
+import { copyId } from './commands/copyId';
 
 export async function activate(context: vscode.ExtensionContext) {
     const definitionProvider = definitionprovider.create();
     const referenceProvider = referenceprovider.create();
     const variablesCompletionProvider = variablescompletionprovider.create();
     const codeActionProvider = codeactionprovider.create();
+
+    const installationExplorer = new InstallationExplorer(shell.shell);
 
     const debugConfigurationProvider = new PorterInstallConfigurationProvider();
     const debugFactory = new PorterInstallDebugAdapterDescriptorFactory();
@@ -45,6 +51,11 @@ export async function activate(context: vscode.ExtensionContext) {
         registerTextEditorCommand('porter.moveStepUp', moveStepUp),
         registerTextEditorCommand('porter.moveStepDown', moveStepDown),
         registerCommand('porter.parameterise', parameteriseSelection),
+        registerCommand('porter.viewOutputs', viewOutputs),
+        registerCommand('porter.viewLogs', viewLogs),
+        registerCommand('porter.copyId', copyId),
+        registerCommand('porter.refreshInstallationExplorer', () => installationExplorer.refresh()),
+        vscode.window.registerTreeDataProvider('porter.installations', installationExplorer),
         vscode.languages.registerDefinitionProvider(porterManifestSelector, definitionProvider),
         vscode.languages.registerReferenceProvider(porterManifestSelector, referenceProvider),
         vscode.languages.registerCompletionItemProvider(porterManifestSelector, variablesCompletionProvider, ...variablescompletionprovider.COMPLETION_TRIGGERS),
