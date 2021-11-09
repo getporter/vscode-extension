@@ -1,15 +1,15 @@
 {
     "name": "porter-vscode",
     "displayName": "Porter",
-    "description": "Build CNAB bundles with Porter",
-    "version": "0.0.2",
+    "description": "Package your application artifact, client tools, configuration and deployment logic together as a versioned bundle that you can distribute, and then install with a single command",
+    "version": "0.0.3",
     "preview": true,
-    "publisher": "ms-kubernetes-tools",
+    "publisher": "getporter",
     "icon": "resources/porter.png",
     "engines": {
         "vscode": "^1.30.0"
     },
-    "license": "MIT",
+    "license": "Apache 2.0",
     "categories": [
         "Other"
     ],
