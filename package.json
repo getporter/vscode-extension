@@ -1,8 +1,8 @@
 {
     "name": "porter-vscode",
     "displayName": "Porter",
-    "description": "Package your application artifact, client tools, configuration and deployment logic together as a versioned bundle that you can distribute, and then install with a single command",
     "version": "0.0.3",
+    "description": "Package your application artifact, client tools, configuration and deployment logic together as a versioned bundle that you can distribute, and then install with a single command",
     "preview": true,
     "publisher": "getporter",
     "icon": "resources/porter.png",
