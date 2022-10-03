@@ -268,7 +268,7 @@
         "cnabjs": "0.0.5",
         "js-levenshtein": "^1.1.6",
         "mkdirp": "^0.5.1",
-        "shelljs": "^0.8.3",
+        "shelljs": "^0.8.5",
         "tmp": "^0.0.33",
         "vscode-debugadapter": "^1.37.1",
         "vscode-extension-telemetry": "^0.1.2",
