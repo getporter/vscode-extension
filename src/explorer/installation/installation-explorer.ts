@@ -39,7 +39,7 @@ export class InstallationExplorer implements vscode.TreeDataProvider<Installatio
     }
 
     refresh(): CommandResult {
-        this.onDidChangeEmitter.fire();
+        this.onDidChangeEmitter;
         return CommandResult.Succeeded;
     }
 }
