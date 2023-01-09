@@ -1,9 +1,11 @@
 export interface CredentialInfo {
-    readonly Name: string;
-    readonly Modified: string;
+    readonly namespace: string;
+    readonly name: string;
+    readonly modified: string;
 }
 
 export interface CredentialSetContent {
+    readonly namespace: string;
     readonly name: string;
     readonly credentials: Credential[];
 }
@@ -48,34 +50,44 @@ export function isCommand(s: CredentialSource): s is ShellCommandCredentialSourc
 }
 
 export interface Installation {
-    readonly Name: string;
-    readonly Created: string;
-    readonly Modified: string;
-    readonly Action: string;
-    readonly Status: string;
-    readonly History: ReadonlyArray<InstallationHistoryEntry>;  // only has latest in practice
+    readonly namespace: string;
+    readonly name: string;
+    readonly status: InstallationStatus;
+    readonly _calculated: InstallationDisplayValues;
+}
+
+export interface InstallationStatus {
+    readonly resultStatus: string;
+    readonly created: string;
+    readonly modified: string;
+    readonly action: string;
+}
+
+export interface InstallationDisplayValues {
+    readonly displayInstallationState: string;
+    readonly displayInstallationStatus: string;
 }
 
 export interface InstallationDetail {
-    readonly Name: string;
-    readonly Created: string;
-    readonly Modified: string;
-    readonly Action: string;
-    readonly Status: string;
-    readonly Outputs: ReadonlyArray<InstallationOutput>;
-    readonly History: ReadonlyArray<InstallationHistoryEntry>;
+    readonly namespace: string;
+    readonly name: string;
+    readonly created: string;
+    readonly modified: string;
+    readonly action: string;
+    readonly status: string;
+    history: Run[];
 }
 
-export interface InstallationHistoryEntry {
-    readonly ClaimID: string;
-    readonly Action: string;
-    readonly Timestamp: string;
-    readonly Status: string;
-    readonly HasLogs: boolean;
+export interface Run {
+    readonly id: string;
+    readonly action: string;
+    readonly started: string;
+    readonly stopped: string;
+    readonly status: string;
 }
 
 export interface InstallationOutput {
-    readonly Name: string;
-    readonly Value: string;
-    readonly Type: string;
+    readonly name: string;
+    readonly value: string;
+    readonly type: string;
 }

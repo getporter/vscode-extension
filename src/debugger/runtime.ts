@@ -128,11 +128,11 @@ export class PorterInstallRuntime extends EventEmitter {
     private credentials: LazyVariableInfo[] | undefined = undefined;
 
     public async getCredentials(): Promise<LazyVariableInfo[]> {
-        if (this.credentials !== undefined)  {
+        if (this.credentials !== undefined) {
             return this.credentials;
         }
         if (this.actionInputs && this.actionInputs.credentialSet) {
-            const credentials = await porter.getCredentials(shell, this.actionInputs.credentialSet);
+            const credentials = await porter.getCredentials(shell, this.actionInputs.namespace, this.actionInputs.credentialSet);
             if (credentials.succeeded) {
                 this.credentials = credentials.result.credentials.map((c) => ({ name: c.name, value: () => this.evaluateCredential(c.source) }));
                 return this.credentials;
@@ -200,7 +200,7 @@ export class PorterInstallRuntime extends EventEmitter {
     }
 
     private run(stepEvent?: string) {
-        for (let ln = this.currentLine+1; ln < this.sourceLines.length; ln++) {
+        for (let ln = this.currentLine + 1; ln < this.sourceLines.length; ln++) {
             if (this.fireEventsForLine(ln, stepEvent)) {
                 this.currentLine = ln;
                 return true;
@@ -238,7 +238,7 @@ export class PorterInstallRuntime extends EventEmitter {
         return false;
     }
 
-    private sendEvent(event: string, ... args: any[]) {
+    private sendEvent(event: string, ...args: any[]) {
         setImmediate((_) => {
             this.emit(event, ...args);
         });

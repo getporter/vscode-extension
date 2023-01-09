@@ -66,7 +66,7 @@ async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefi
             return;
         }
 
-        const installInputs: InstallInputs = { parameters: parameters.value, credentialSet: credentialSet.value };
+        const installInputs: InstallInputs = { namespace: "", parameters: parameters.value, credentialSet: credentialSet.value };
 
         config.installInputs = installInputs;
     }

@@ -8,6 +8,7 @@ export const EVENT_OUTPUT = 'output';
 export const EVENT_END = 'end';
 
 export interface InstallInputs {
+    readonly namespace: string;
     readonly parameters?: { [key: string]: string };
     readonly credentialSet?: string;
 }

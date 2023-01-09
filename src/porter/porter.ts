@@ -6,7 +6,7 @@ import { Errorable } from '../utils/errorable';
 import * as shell from '../utils/shell';
 import { fs } from '../utils/fs';
 import * as pairs from '../utils/pairs';
-import { CredentialInfo, CredentialSetContent, Installation, InstallationDetail } from './porter.objectmodel';
+import { CredentialInfo, CredentialSetContent, Installation, InstallationDetail, InstallationOutput, Run } from './porter.objectmodel';
 
 import { PORTER_OUTPUT_CHANNEL as logChannel } from '../utils/logging';
 
@@ -36,37 +36,58 @@ export function home(sh: shell.Shell): string {
 export async function listCredentialSets(sh: shell.Shell): Promise<Errorable<string[]>> {
     function parse(stdout: string): string[] {
         return (JSON.parse(stdout) as CredentialInfo[])
-            .map((c) => c.Name);
+            .map((c) => c.name);
     }
-    return await invokeObj(sh, 'credentials list', '-o json', { }, parse);
+    return await invokeObj(sh, 'credentials list', '--all-namespaces -o json', {}, parse);
 }
 
 export async function listInstallations(sh: shell.Shell): Promise<Errorable<Installation[]>> {
     function parse(stdout: string): Installation[] {
         return (JSON.parse(stdout) as Installation[]);
     }
-    return await invokeObj(sh, 'list', '-o json', { }, parse);
+    return await invokeObj(sh, 'list', '--all-namespaces -o json', {}, parse);
 }
 
-export async function getInstallationDetail(sh: shell.Shell, installationId: string): Promise<Errorable<InstallationDetail>> {
-    function parse(stdout: string): InstallationDetail {
+export async function listInstallationOutputs(sh: shell.Shell, namespace: string, name: string): Promise<Errorable<InstallationOutput[]>> {
+    function parse(stdout: string): InstallationOutput[] {
+        return (JSON.parse(stdout) as InstallationOutput[]);
+    }
+    return await invokeObj(sh, 'installation outputs list', `--installation ${name} --namespace=${namespace} -o json`, {}, parse);
+}
+
+export async function getInstallationDetail(sh: shell.Shell, namespace: string, name: string): Promise<Errorable<InstallationDetail>> {
+    function parseInstallation(stdout: string): InstallationDetail {
         return (JSON.parse(stdout) as InstallationDetail);
     }
-    return await invokeObj(sh, 'show', `${installationId} -o json`, { }, parse);
+    const installation = await invokeObj(sh, 'show', `${name} --namespace=${namespace} -o json`, {}, parseInstallation);
+    if (!installation.succeeded) {
+        return { succeeded: false, error: installation.error };
+    }
+
+    function parseRuns(stdout: string): Run[] {
+        return (JSON.parse(stdout) as Run[]);
+    }
+    const runs = await invokeObj(sh, 'installation runs list', `${name} --namespace=${namespace} -o json`, {}, parseRuns);
+    if (!runs.succeeded) {
+        return { succeeded: false, error: runs.error };
+    }
+
+    installation.result.history = runs.result;
+    return installation;
 }
 
-export async function getClaimLogs(sh: shell.Shell, claimId: string): Promise<Errorable<string[]>> {
+export async function getRunLogs(sh: shell.Shell, runId: string): Promise<Errorable<string[]>> {
     function parse(stdout: string): string[] {
         return stdout.split('\n');
     }
-    return await invokeObj(sh, 'logs', `--run ${claimId}`, { }, parse);
+    return await invokeObj(sh, 'logs', `--run ${runId}`, {}, parse);
 }
 
-export async function getCredentials(sh: shell.Shell, credentialSetName: string): Promise<Errorable<CredentialSetContent>> {
+export async function getCredentials(sh: shell.Shell, namespace: string, name: string): Promise<Errorable<CredentialSetContent>> {
     function parse(stdout: string): CredentialSetContent {
         return JSON.parse(stdout);
     }
-    return await invokeObj(sh, 'credentials show', `${credentialSetName} -o json`, { }, parse);
+    return await invokeObj(sh, 'credentials show', `${name} --namespace=${namespace} -o json`, {}, parse);
 }
 
 export async function create(sh: shell.Shell, folder: string): Promise<Errorable<string>> {
