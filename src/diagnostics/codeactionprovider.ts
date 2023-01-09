@@ -21,7 +21,8 @@ class PorterCodeActionProvider implements vscode.CodeActionProvider {
             return [];
         }
 
-        const actions = linters.map((l) => l.fixes(document, manifest, context.diagnostics));
+        const diagnostics = context.diagnostics;
+        const actions = linters.map((l) => l.fixes(document, manifest, diagnostics.flat()));
         return flatten(...actions);
     }
 }

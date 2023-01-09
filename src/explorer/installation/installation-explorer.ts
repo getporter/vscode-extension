@@ -38,8 +38,10 @@ export class InstallationExplorer implements vscode.TreeDataProvider<Installatio
         return installations.result.map((i) => new InstallationNode(this.shell, i));
     }
 
-    refresh(): CommandResult {
-        this.onDidChangeEmitter.fire();
+    async refresh(): Promise<CommandResult> {
+        (await this.rootNodes()).forEach((element: InstallationExplorerTreeNode) => {
+            this.onDidChangeEmitter.fire(element);
+        });
         return CommandResult.Succeeded;
     }
 }

@@ -4,8 +4,8 @@ import {
     TerminatedEvent, StoppedEvent, OutputEvent,
     Scope, Source, StackFrame, Thread, Handles,
     Breakpoint, BreakpointEvent, InitializedEvent
-} from 'vscode-debugadapter';
-import { DebugProtocol } from 'vscode-debugprotocol';
+} from '@vscode/debugadapter';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { basename } from 'path';
 import { PorterInstallRuntime } from './runtime';
 import {
