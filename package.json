@@ -273,7 +273,8 @@
         "shelljs": "^0.8.5",
         "tmp": "^0.2.1",
         "yaml-ast-parser": "0.0.43",
-        "vscode-test": "^1.5.2"
+        "vscode-test": "^1.5.2",
+        "tslib": "^2.4.1"
     },
     "devDependencies": {
         "@types/js-levenshtein": "^1.1.1",
