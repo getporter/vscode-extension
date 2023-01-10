@@ -26,9 +26,9 @@ function renderMarkdown(title: string, outputs: ReadonlyArray<InstallationOutput
 }
 
 function renderOutput(output: InstallationOutput): string {
-    const valueLines = output.Value.split('\n');
+    const valueLines = output.value.split('\n');
     return [
-        `| ${output.Name} | ${output.Type} | ${valueLines[0]} |`,
+        `| ${output.name} | ${output.type} | ${valueLines[0]} |`,
         ...valueLines.slice(1).map((l) => `| | | ${l} |`)
     ].join('\n');
 }

@@ -66,7 +66,8 @@ async function resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefi
             return;
         }
 
-        const installInputs: InstallInputs = { parameters: parameters.value, credentialSet: credentialSet.value };
+        // The namespace is set to "" to make the compiler happy. When porter install is run, the current namespace defined in the porter config file in PORTER_HOME is used.
+        const installInputs: InstallInputs = { namespace: "", parameters: parameters.value, credentialSet: credentialSet.value };
 
         config.installInputs = installInputs;
     }
