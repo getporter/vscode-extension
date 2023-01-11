@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.0.4]
+
+- Support Porter v1 release
+
 ## [0.0.3]
 
 - Republish the extension under the new getporter publisher
