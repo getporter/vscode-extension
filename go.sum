@@ -1,8 +1,8 @@
+get.porter.sh/magefiles v0.4.0 h1:cJixJrbGz4OAsr81a7ggIWI2cS8uMATOVIlRotRkfyU=
+get.porter.sh/magefiles v0.4.0/go.mod h1:KzKenKVauKKDhZ5FERVhqSz8m/xVSsRzOPseDA4UDIE=
 github.com/Masterminds/semver/v3 v3.1.1 h1:hLg3sBzpNErnxhQtUy/mmLR2I9foDujNK030IGemrRc=
 github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
 github.com/andybalholm/brotli v1.0.1/go.mod h1:loMXtMfwqflxFJPmdbJO0a3KNoPuLBgiu3qAvBg8x/Y=
-github.com/carolynvs/magefiles v0.1.3-0.20230125172107-729bea4d75e2 h1:kCDA0g+vRIOwA26+SZWXIDg2OJ2Y4qcSQv8pwf0k3is=
-github.com/carolynvs/magefiles v0.1.3-0.20230125172107-729bea4d75e2/go.mod h1:KzKenKVauKKDhZ5FERVhqSz8m/xVSsRzOPseDA4UDIE=
 github.com/carolynvs/magex v0.9.0 h1:fWe7oshGv6zuei5Z6EI95RSlOKjIifBZ26myB9G+m/I=
 github.com/carolynvs/magex v0.9.0/go.mod h1:H1LW6RYJ/sNbisMmPe9E73aJZa8geKLKK9mBWLWz3ek=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
