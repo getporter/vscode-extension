@@ -15,7 +15,7 @@ For more general information about contributing to the Porter project, see our [
 * [Developer Tasks](#developer-tasks)
   * [Initial setup](#initial-setup)
   * [Magefile explained](#magefile-explained)
-
+* [How it works](#how-it-works)
 ---
 
 # How to help
@@ -259,3 +259,15 @@ example.
 From inside VS Code while you are editing the source code for the extension, press F5 or from the menu select "Run -> Start Debugging".
 A new VS Code window will open with the extension loaded.
 Open a directory with a porter bundle, and from there you can manually verify that autocomplete and other features of the extension are working properly.
+
+# How it works
+
+The extension does a lot of things, but some key bits of the logic in the extension are actually **in the porter cli**.
+The autocomplete for porter.yaml files works as follows:
+
+1. The extension detects that it is in a porter.yaml file and calls `porter schema`.
+1. The schema command returns a json schema for the installation of porter on the local machine. The schema cannot be known beforehand because it's dependent upon the mixins that are installed.
+1. The extension detects if the json schema for Porter bundles has changed since last loaded and if so, prompts the user to close and reopen the porter.yaml file.
+1. Now we have autocomplete available for the porter.yaml file! 🎉
+
+Other json schema files used by Porter are static, and stored in Porter's main repository in https://github.com/getporter/porter/tree/main/pkg/schema. If you are working on a bug report for the json schema, you may need to edit either on the schema files in that directory, or in the affected mixin's repository. Most of the time, fixes for the extension do not actually require changing the extension itself or releasing a new version of the extension. Instead we fix either the porter cli or a mixin and the user doesn't need to update the extension itself.
