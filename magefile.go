@@ -5,6 +5,7 @@
 package main
 
 import (
+	"get.porter.sh/magefiles/git"
 	"github.com/carolynvs/magex/mgx"
 	"github.com/carolynvs/magex/pkg"
 	"github.com/carolynvs/magex/shx"
@@ -45,6 +46,6 @@ func Package() error {
 	return must.RunV("vsce", "package")
 }
 
-func SetupDCO() {
-
+func SetupDCO() error {
+	return git.SetupDCO()
 }
