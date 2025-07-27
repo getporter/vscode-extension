@@ -36,5 +36,5 @@ jobs:
     - name: Archive Extension
       uses: actions/upload-artifact@v4
       with:
-        name: vsix
+        name: vsix-${{ matrix.os }}
         path: vsix
